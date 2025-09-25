@@ -150,6 +150,7 @@
             errorDiv.classList.add('hidden');
 
             // Make API call to login endpoint
+            console.log('Starting login request for:', username);
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
@@ -158,14 +159,17 @@
                 body: JSON.stringify({ username, password })
             })
             .then(response => {
+                console.log('API Response status:', response.status);
                 if (!response.ok) {
                     return response.json().then(data => {
+                        console.log('API Error response:', data);
                         throw new Error(data.error || 'Login failed');
                     });
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('API Success response:', data);
                 if (data.success) {
                     userType = 'admin';
                     showDashboard();
