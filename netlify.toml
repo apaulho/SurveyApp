@@ -1,21 +1,9 @@
 [build]
-  # Static HTML deployment
-  publish = "dist"
+  command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
 
-# Disable all processing for pure static HTML
-[build.processing]
-  skip_processing = false
-
-[build.processing.css]
-  bundle = false
-  minify = false
-
-[build.processing.js]
-  bundle = false
-  minify = false
-
-[build.processing.html]
-  pretty_urls = false
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
