@@ -157,19 +157,25 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Login failed');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     userType = 'admin';
                     showDashboard();
                 } else {
-                    errorDiv.textContent = 'Invalid username or password';
-                    errorDiv.classList.remove('hidden');
+                    throw new Error(data.error || 'Login failed');
                 }
             })
             .catch(error => {
                 console.error('Login error:', error);
-                errorDiv.textContent = 'Login failed. Please try again.';
+                errorDiv.textContent = error.message || 'Login failed. Please try again.';
                 errorDiv.classList.remove('hidden');
             });
         }
