@@ -149,6 +149,9 @@
             // Clear previous error
             errorDiv.classList.add('hidden');
 
+            // Reset any previous login state
+            userType = 'guest';
+
             // Make API call to login endpoint
             console.log('Starting login request for:', username);
             fetch('/api/login', {
@@ -160,17 +163,18 @@
             })
             .then(response => {
                 console.log('API Response status:', response.status);
-                if (!response.ok) {
-                    return response.json().then(data => {
+                return response.json().then(data => {
+                    if (!response.ok) {
                         console.log('API Error response:', data);
                         throw new Error(data.error || 'Login failed');
-                    });
-                }
-                return response.json();
+                    }
+                    return data;
+                });
             })
             .then(data => {
                 console.log('API Success response:', data);
-                if (data.success) {
+                if (data.success && data.user) {
+                    console.log('Login successful, setting userType to admin');
                     userType = 'admin';
                     showDashboard();
                 } else {
@@ -181,6 +185,8 @@
                 console.error('Login error:', error);
                 errorDiv.textContent = error.message || 'Login failed. Please try again.';
                 errorDiv.classList.remove('hidden');
+                // Ensure userType stays as guest on error
+                userType = 'guest';
             });
         }
 
