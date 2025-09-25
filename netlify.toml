@@ -1,11 +1,11 @@
 [build]
-  # No build command needed for static HTML
-  publish = "."
+  # Static HTML deployment
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
 
-# Explicitly disable any plugins or build processing
+# Disable all processing for pure static HTML
 [build.processing]
   skip_processing = false
 
