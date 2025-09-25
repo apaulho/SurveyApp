@@ -1,0 +1,36 @@
+name: Deploy Database Schema to Neon
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'database_schema.sql'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PostgreSQL client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Deploy schema to Neon
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        # Wait for database to be ready
+        until psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1; do
+          echo "Waiting for database..."
+          sleep 5
+        done
+
+        echo "Deploying database schema..."
+        psql "$DATABASE_URL" -f database_schema.sql
+
+        echo "Database schema deployed successfully!"
