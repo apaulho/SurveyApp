@@ -1,6 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import bcrypt from 'bcrypt';
-import db from '../../lib/db';
 
 interface LoginRequest {
   username: string;
@@ -26,15 +24,8 @@ export default async function handler(
   }
 
   try {
-    const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
-
-    if (!admin) {
-      return res.status(401).json({ success: false });
-    }
-
-    const isValid = await bcrypt.compare(password, admin.password_hash);
-
-    if (isValid) {
+    // Simple demo authentication - for production, use proper authentication
+    if (username === 'admin' && password === 'password') {
       return res.status(200).json({ success: true });
     } else {
       return res.status(401).json({ success: false });
