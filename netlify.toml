@@ -1,7 +1,21 @@
 [build]
-
+  # No build command needed for static HTML
   publish = "."
 
 [build.environment]
-
   NODE_VERSION = "18"
+
+# Explicitly disable any plugins or build processing
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = false
