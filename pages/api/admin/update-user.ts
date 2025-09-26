@@ -15,6 +15,7 @@ interface UpdateUserRequest {
   phone?: string;
   is_active: boolean;
   email_verified: boolean;
+  level: number;
 }
 
 interface UpdateUserResponse {
@@ -42,7 +43,8 @@ export default async function handler(
     address_state,
     phone,
     is_active,
-    email_verified
+    email_verified,
+    level
   }: UpdateUserRequest = req.body;
 
   // Basic validation
@@ -82,6 +84,7 @@ export default async function handler(
       phone: phone || null,
       is_active,
       email_verified,
+      level,
       updated_at: new Date()
     };
 
@@ -99,7 +102,7 @@ export default async function handler(
       UPDATE userdb
       SET ${setClause}
       WHERE user_id = $1
-      RETURNING user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, created_at, updated_at
+      RETURNING user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, level, created_at, updated_at
     `;
 
     const result = await pool.query(query, [user_id, ...values]);

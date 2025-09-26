@@ -72,14 +72,14 @@ export default async function handler(
     const result = await pool.query(`
       INSERT INTO userdb (
         username, email, password_hash, first_name, last_name,
-        address_city, address_state, phone, is_active, email_verified
+        address_city, address_state, phone, is_active, email_verified, level
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
       )
-      RETURNING user_id, username, email, first_name, last_name
+      RETURNING user_id, username, email, first_name, last_name, level
     `, [
       username, email, passwordHash, first_name, last_name,
-      address_city, address_state, phone, true, true // Set active and verified for demo
+      address_city, address_state, phone, true, true, 2002 // Default to user level
     ]);
 
     const newUser = result.rows[0];

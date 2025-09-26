@@ -39,7 +39,7 @@ export default async function handler(
   try {
     // Find user by username
     const userResult = await pool.query(
-      'SELECT user_id, username, email, password_hash, first_name, last_name FROM userdb WHERE username = $1 AND is_active = true',
+      'SELECT user_id, username, email, password_hash, first_name, last_name, level FROM userdb WHERE username = $1 AND is_active = true',
       [username]
     );
 
@@ -56,17 +56,7 @@ export default async function handler(
       return res.status(401).json({ success: false, error: 'Invalid username or password' });
     }
 
-    // Get user level (assuming we add this to the user table)
-    // For now, let's use a simple mapping based on username for the Star Wars users
-    let userLevel = 2002; // Default to user level
-
-    // Admin users (level 1001)
-    const adminUsers = ['darthvader', 'palpatine'];
-    if (adminUsers.includes(username.toLowerCase())) {
-      userLevel = 1001;
-    }
-
-    console.log(`✅ User logged in: ${user.username} (Level: ${userLevel})`);
+    console.log(`✅ User logged in: ${user.username} (Level: ${user.level})`);
 
     // Return user data (excluding password hash)
     const userData = {
@@ -75,7 +65,7 @@ export default async function handler(
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      level: userLevel
+      level: user.level
     };
 
     res.status(200).json({
