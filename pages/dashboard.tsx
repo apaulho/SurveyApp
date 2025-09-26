@@ -36,6 +36,13 @@ export default function SurveyDashboard() {
     }
 
     const parsedUser = JSON.parse(userData);
+    
+    // Redirect admins to admin dashboard
+    if (parsedUser.level === 1001) {
+      router.push('/admin');
+      return;
+    }
+    
     setUser(parsedUser);
 
     // For now, show sample surveys
