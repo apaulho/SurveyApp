@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [migrationMessage, setMigrationMessage] = useState('');
   const [editFormData, setEditFormData] = useState({
     username: '',
     email: '',
@@ -68,6 +69,29 @@ export default function AdminDashboard() {
       console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runMigration = async () => {
+    try {
+      setMigrationMessage('Running migration...');
+      const response = await fetch('/api/admin/migrate-levels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setMigrationMessage(data.message);
+        // Refresh users list to show updated levels
+        fetchUsers();
+      } else {
+        setMigrationMessage('Migration failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      setMigrationMessage('Migration failed: Network error');
     }
   };
 
@@ -250,6 +274,27 @@ export default function AdminDashboard() {
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">User Management</h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage all registered users in the system.</p>
+            </div>
+
+            {/* Migration Section */}
+            <div className="px-4 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900">Database Migration</h4>
+                  <p className="text-sm text-gray-500">Add level field to existing users</p>
+                </div>
+                <button
+                  onClick={runMigration}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Run Migration
+                </button>
+              </div>
+              {migrationMessage && (
+                <div className={`mt-2 text-sm ${migrationMessage.includes('failed') ? 'text-red-600' : 'text-green-600'}`}>
+                  {migrationMessage}
+                </div>
+              )}
             </div>
             <ul className="divide-y divide-gray-200">
               {users.length > 0 ? (
