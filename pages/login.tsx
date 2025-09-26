@@ -4,6 +4,7 @@ import NavBar from '../components/NavBar';
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [registerData, setRegisterData] = useState({
     username: '',
@@ -16,9 +17,45 @@ export default function Login() {
     address_state: '',
     phone: ''
   });
+  const [forgotPasswordData, setForgotPasswordData] = useState({ email: '' });
+  const [loginError, setLoginError] = useState('');
+  const [registerError, setRegisterError] = useState('');
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotPasswordError('');
+    setForgotPasswordSuccess('');
+
+    if (!forgotPasswordData.email) {
+      setForgotPasswordError('Email is required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordData.email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setForgotPasswordSuccess('Password reset link sent! Check your email (in development mode, check the console).');
+        setForgotPasswordData({ email: '' });
+      } else {
+        setForgotPasswordError(data.error || 'Failed to send reset email');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      setForgotPasswordError('Failed to send reset email');
+    }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -158,6 +195,16 @@ export default function Login() {
                   Sign in
                 </button>
               </div>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Forgot your password?
+                </button>
+              </div>
             </form>
           ) : (
             /* Registration Form */
@@ -279,6 +326,76 @@ export default function Login() {
           )}
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Reset Password</h3>
+              <button
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotPasswordError('');
+                  setForgotPasswordSuccess('');
+                  setForgotPasswordData({ email: '' });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  required
+                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter your email address"
+                  value={forgotPasswordData.email}
+                  onChange={(e) => setForgotPasswordData({ email: e.target.value })}
+                />
+              </div>
+
+              {forgotPasswordError && (
+                <div className="text-red-600 text-sm text-center">{forgotPasswordError}</div>
+              )}
+
+              {forgotPasswordSuccess && (
+                <div className="text-green-600 text-sm text-center">{forgotPasswordSuccess}</div>
+              )}
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setForgotPasswordError('');
+                    setForgotPasswordSuccess('');
+                    setForgotPasswordData({ email: '' });
+                  }}
+                  className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Send Reset Link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
