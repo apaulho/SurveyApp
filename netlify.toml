@@ -1,6 +1,6 @@
 [build]
-  command = "echo 'Static deployment - no build needed'"
-  publish = "."
+  command = "copy index.html dist\\"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
