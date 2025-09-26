@@ -1,11 +1,9 @@
 [build]
-  command = "cp index.html dist/ 2>/dev/null || true"
-  publish = "dist"
+  command = "npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
