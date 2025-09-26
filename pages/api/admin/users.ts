@@ -8,6 +8,11 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
+  address_city?: string;
+  address_state?: string;
+  phone?: string;
+  is_active: boolean;
+  email_verified: boolean;
   level: number;
 }
 
@@ -26,9 +31,9 @@ export default async function handler(
   }
 
   try {
-    // Fetch all users
+    // Fetch all users with all fields
     const usersResult = await pool.query(
-      'SELECT user_id, username, email, first_name, last_name FROM userdb WHERE is_active = true ORDER BY user_id'
+      'SELECT user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified FROM userdb ORDER BY user_id'
     );
 
     // Add user levels (for demo purposes, using username-based logic)
@@ -47,6 +52,11 @@ export default async function handler(
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        address_city: user.address_city,
+        address_state: user.address_state,
+        phone: user.phone,
+        is_active: user.is_active,
+        email_verified: user.email_verified,
         level: level
       };
     });

@@ -8,7 +8,14 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
+  address_city?: string;
+  address_state?: string;
+  phone?: string;
+  is_active: boolean;
+  email_verified: boolean;
   level: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function AdminDashboard() {
@@ -16,6 +23,20 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    address_city: '',
+    address_state: '',
+    phone: '',
+    is_active: true,
+    email_verified: false
+  });
 
   useEffect(() => {
     // Check if user is logged in and is admin
@@ -52,6 +73,71 @@ export default function AdminDashboard() {
   const logout = () => {
     localStorage.removeItem('user');
     router.push('/');
+  };
+
+  const openEditModal = (userToEdit: User) => {
+    setEditingUser(userToEdit);
+    setEditFormData({
+      username: userToEdit.username,
+      email: userToEdit.email,
+      password: '', // Don't pre-fill password
+      first_name: userToEdit.first_name,
+      last_name: userToEdit.last_name,
+      address_city: userToEdit.address_city || '',
+      address_state: userToEdit.address_state || '',
+      phone: userToEdit.phone || '',
+      is_active: userToEdit.is_active,
+      email_verified: userToEdit.email_verified
+    });
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingUser(null);
+    setEditFormData({
+      username: '',
+      email: '',
+      password: '',
+      first_name: '',
+      last_name: '',
+      address_city: '',
+      address_state: '',
+      phone: '',
+      is_active: true,
+      email_verified: false
+    });
+  };
+
+  const saveUserChanges = async () => {
+    if (!editingUser) return;
+
+    try {
+      const response = await fetch('/api/admin/update-user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: editingUser.user_id,
+          ...editFormData
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update the users list with the new data
+        setUsers(users.map(u =>
+          u.user_id === editingUser.user_id ? data.user : u
+        ));
+        closeEditModal();
+        alert('User updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update user');
+      }
+    } catch (error) {
+      console.error('Update user error:', error);
+      alert('Failed to update user');
+    }
   };
 
   if (loading) {
@@ -191,6 +277,12 @@ export default function AdminDashboard() {
                           {user.level === 1001 ? 'Admin' : 'User'}
                         </span>
                         <div className="ml-4 text-sm text-gray-500">{user.email}</div>
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium"
+                        >
+                          Edit
+                        </button>
                       </div>
                     </div>
                   </li>
@@ -204,6 +296,152 @@ export default function AdminDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Edit User Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit User</h3>
+              <button
+                onClick={closeEditModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    value={editFormData.username}
+                    onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password (leave blank to keep current)</label>
+                <input
+                  type="password"
+                  value={editFormData.password}
+                  onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter new password or leave blank"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.first_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.last_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={editFormData.address_city}
+                    onChange={(e) => setEditFormData({ ...editFormData, address_city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    value={editFormData.address_state}
+                    onChange={(e) => setEditFormData({ ...editFormData, address_state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center space-x-6">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.is_active}
+                    onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Active User</span>
+                </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.email_verified}
+                    onChange={(e) => setEditFormData({ ...editFormData, email_verified: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Email Verified</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeEditModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveUserChanges}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
