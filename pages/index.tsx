@@ -83,8 +83,8 @@ export default function Home() {
   };
 
   const startSurvey = () => {
-    // Show login form for survey access
-    setUserType('survey-login');
+    // Redirect to the login page
+    window.location.href = '/login';
   };
 
   const showMainPage = () => {
@@ -150,6 +150,7 @@ export default function Home() {
                 <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
                 <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
                 <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
+                <a href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Login</a>
               </nav>
             </div>
           </div>
@@ -159,7 +160,7 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              SURVEYS BY DESIGN - LIVE UPDATE
+              SURVEYS BY DESIGN - CLEAN VERSION
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
               We create intelligent surveys that drive organizational improvement through data-driven insights and meaningful feedback.
@@ -170,6 +171,12 @@ export default function Home() {
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Start Survey
+              </button>
+              <button
+                onClick={startSurvey}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              >
+                Login
               </button>
               <a
                 href="#learn-more"
@@ -211,55 +218,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Admin Login Section */}
-          <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8" id="admin-login">
-            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Administrator Access - TEST BUTTON BELOW</h2>
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <button
-                onClick={testDatabaseConnection}
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
-              >
-                Test Database Connection (Updated)
-              </button>
-              {dbTestResult && (
-                <div className={`text-xs mt-2 text-center ${
-                  dbTestStatus === 'success' ? 'text-green-600' :
-                  dbTestStatus === 'error' ? 'text-red-600' : 'text-blue-600'
-                }`}>
-                  {dbTestResult}
-                </div>
-              )}
-            </div>
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={adminUsername}
-                  onChange={(e) => setAdminUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
-              >
-                Login as Administrator
-              </button>
-              {loginError && <p className="text-red-500 text-center mt-4">{loginError}</p>}
-            </form>
-          </div>
         </main>
 
         {/* Footer */}
