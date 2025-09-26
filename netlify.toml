@@ -1,5 +1,11 @@
 [build]
+  command = "cp index.html dist/ 2>/dev/null || true"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
