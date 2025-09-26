@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "add-users": "ts-node scripts/add-multiple-users.ts"
+    "add-users": "ts-node scripts/add-multiple-users.ts",
+    "seed-users": "node scripts/add-multiple-users.js"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "5.13.3",

@@ -78,7 +78,7 @@ async function addMultipleUsers() {
       // Hash the password
       const passwordHash = await bcrypt.hash(user.password, 10);
 
-      // Insert user
+      // Insert user (ignore if already exists)
       const result = await pool.query(`
         INSERT INTO userdb (
           username, email, password_hash, first_name, last_name,
@@ -86,14 +86,19 @@ async function addMultipleUsers() {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
         )
+        ON CONFLICT (username) DO NOTHING
         RETURNING user_id, username, email, first_name, last_name
       `, [
         user.username, user.email, passwordHash, user.first_name, user.last_name,
         user.address_city, user.address_state, user.phone, user.is_active, user.email_verified
       ]);
 
-      console.log(`✅ User created: ${user.username} (${user.level})`);
-      console.log('Details:', result.rows[0]);
+      if (result.rows.length > 0) {
+        console.log(`✅ User created: ${user.username} (${user.level})`);
+        console.log('Details:', result.rows[0]);
+      } else {
+        console.log(`ℹ️  User already exists: ${user.username} (${user.level})`);
+      }
       console.log('---');
     }
 
