@@ -60,8 +60,46 @@ export default function Login() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', loginData);
-    alert(`Login attempted for user: ${loginData.username}`);
+    setLoginError('');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: loginData.username,
+          password: loginData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        console.log('Login successful:', data.user);
+
+        // Store user data in localStorage for session management
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redirect based on user level
+        if (data.user.level === 1001) {
+          // Admin user - redirect to admin dashboard
+          window.location.href = '/admin';
+        } else if (data.user.level === 2002) {
+          // Regular user - redirect to survey dashboard
+          window.location.href = '/dashboard';
+        } else {
+          // Unknown level - redirect to home
+          window.location.href = '/';
+        }
+      } else {
+        setLoginError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Login failed. Please try again.');
+    }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
