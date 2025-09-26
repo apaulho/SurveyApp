@@ -1,5 +1,5 @@
 [build]
-  command = "copy index.html dist\\"
+  command = "mkdir -p dist && cp index.html dist/"
   publish = "dist"
 
 [build.environment]
