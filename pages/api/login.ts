@@ -39,7 +39,7 @@ export default async function handler(
   try {
     // Find user by username
     const userResult = await pool.query(
-      'SELECT user_id, username, email, password_hash, first_name, last_name, level FROM userdb WHERE username = $1 AND is_active = true',
+      'SELECT user_id, username, email, password_hash, first_name, last_name, COALESCE(level, 2002) as level FROM userdb WHERE username = $1 AND is_active = true',
       [username]
     );
 

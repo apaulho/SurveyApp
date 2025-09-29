@@ -17,17 +17,17 @@ export default async function handler(
   }
 
   try {
-    console.log('🚀 Starting database migration for level field...');
+    console.log('Starting database migration for level field...');
 
     // Add level column if it doesn't exist
-    console.log('📝 Adding level column to userdb...');
+    console.log('Adding level column to userdb...');
     await pool.query(`
       ALTER TABLE userdb
       ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 2002;
     `);
 
     // Update existing admin users
-    console.log('👑 Setting admin levels for existing users...');
+    console.log('Setting admin levels for existing users...');
     const adminResult = await pool.query(`
       UPDATE userdb
       SET level = 1001
@@ -38,11 +38,11 @@ export default async function handler(
     const userResult = await pool.query(`
       UPDATE userdb
       SET level = 2002
-      WHERE level IS NULL;
+      WHERE level IS NULL OR level = 0;
     `);
 
-    console.log('✅ Migration completed successfully!');
-    console.log(`📊 Updated ${adminResult.rowCount} admin users and ${userResult.rowCount} regular users`);
+    console.log('Migration completed successfully!');
+    console.log(`Updated ${adminResult.rowCount} admin users and ${userResult.rowCount} regular users`);
 
     res.status(200).json({
       success: true,
@@ -50,10 +50,10 @@ export default async function handler(
     });
 
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error('Migration failed:', error);
     res.status(500).json({
       success: false,
-      error: 'Migration failed: ' + (error as Error).message
+      error: `Migration failed: ${(error as Error).message}`
     });
   }
 }

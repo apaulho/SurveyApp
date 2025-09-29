@@ -33,7 +33,7 @@ export default async function handler(
   try {
     // Fetch all users with all fields
     const usersResult = await pool.query(
-      'SELECT user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, level FROM userdb ORDER BY user_id'
+      'SELECT user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, COALESCE(level, 2002) as level FROM userdb ORDER BY user_id'
     );
 
     // Map users with their stored levels

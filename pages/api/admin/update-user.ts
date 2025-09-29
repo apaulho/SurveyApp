@@ -98,11 +98,19 @@ export default async function handler(
     const values = Object.values(updateData);
     const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
 
+    // Check if level column exists, if not, add it first
+    try {
+      await pool.query('ALTER TABLE userdb ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 2002');
+    } catch (alterError) {
+      // Column might already exist or other error, continue
+      console.log('Level column check/alter:', alterError);
+    }
+
     const query = `
       UPDATE userdb
       SET ${setClause}
       WHERE user_id = $1
-      RETURNING user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, level, created_at, updated_at
+      RETURNING user_id, username, email, first_name, last_name, address_city, address_state, phone, is_active, email_verified, COALESCE(level, 2002) as level, created_at, updated_at
     `;
 
     const result = await pool.query(query, [user_id, ...values]);
