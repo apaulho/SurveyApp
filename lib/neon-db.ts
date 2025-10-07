@@ -18,7 +18,11 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+// Export the pool as default
 export default pool;
+
+// Also export as named export for consistency
+export { pool };
 
 // Helper function to run queries
 export async function query(text: string, params?: any[]) {
