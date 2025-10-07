@@ -118,6 +118,11 @@ export default async function handler(
 
   } catch (error) {
     console.error('Create survey error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    // Provide more detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      success: false,
+      error: `Internal server error: ${errorMessage}`
+    });
   }
 }
