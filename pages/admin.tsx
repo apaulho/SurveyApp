@@ -32,6 +32,24 @@ interface Question {
   required: boolean;
 }
 
+interface Company {
+  company_id: number;
+  company_name: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip?: string;
+  address_country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  industry?: string;
+  main_contact_id?: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -79,6 +97,37 @@ export default function AdminDashboard() {
     is_active: true,
   });
 
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+  const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [createCompanyData, setCreateCompanyData] = useState({
+    company_name: '',
+    address_street: '',
+    address_city: '',
+    address_state: '',
+    address_zip: '',
+    address_country: 'USA',
+    phone: '',
+    email: '',
+    website: '',
+    industry: '',
+    is_active: true,
+  });
+  const [editCompanyData, setEditCompanyData] = useState({
+    company_name: '',
+    address_street: '',
+    address_city: '',
+    address_state: '',
+    address_zip: '',
+    address_country: 'USA',
+    phone: '',
+    email: '',
+    website: '',
+    industry: '',
+    is_active: true,
+  });
+
   useEffect(() => {
     // Check if user is logged in and is admin
     const userData = localStorage.getItem('user');
@@ -96,6 +145,7 @@ export default function AdminDashboard() {
     setUser(parsedUser);
     fetchUsers();
     fetchQuestions();
+    fetchCompanies();
   }, [router]);
 
   const fetchUsers = async () => {
@@ -109,6 +159,18 @@ export default function AdminDashboard() {
       console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('/api/admin/companies');
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data.companies || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
     }
   };
 
@@ -320,6 +382,132 @@ export default function AdminDashboard() {
     }
   };
 
+  // Company Management Functions
+  const openCreateCompanyModal = () => {
+    setCreateCompanyData({
+      company_name: '',
+      address_street: '',
+      address_city: '',
+      address_state: '',
+      address_zip: '',
+      address_country: 'USA',
+      phone: '',
+      email: '',
+      website: '',
+      industry: '',
+      is_active: true,
+    });
+    setShowCreateCompanyModal(true);
+  };
+
+  const closeCreateCompanyModal = () => {
+    setShowCreateCompanyModal(false);
+    setCreateCompanyData({
+      company_name: '',
+      address_street: '',
+      address_city: '',
+      address_state: '',
+      address_zip: '',
+      address_country: 'USA',
+      phone: '',
+      email: '',
+      website: '',
+      industry: '',
+      is_active: true,
+    });
+  };
+
+  const createCompany = async () => {
+    try {
+      const response = await fetch('/api/admin/create-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createCompanyData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Add the new company to the companies list
+        setCompanies([...companies, data.company]);
+        closeCreateCompanyModal();
+        alert('Company created successfully!');
+      } else {
+        alert(data.error || 'Failed to create company');
+      }
+    } catch (error) {
+      console.error('Create company error:', error);
+      alert('Failed to create company');
+    }
+  };
+
+  const openEditCompanyModal = (companyToEdit: Company) => {
+    setEditingCompany(companyToEdit);
+    setEditCompanyData({
+      company_name: companyToEdit.company_name,
+      address_street: companyToEdit.address_street || '',
+      address_city: companyToEdit.address_city || '',
+      address_state: companyToEdit.address_state || '',
+      address_zip: companyToEdit.address_zip || '',
+      address_country: companyToEdit.address_country || 'USA',
+      phone: companyToEdit.phone || '',
+      email: companyToEdit.email || '',
+      website: companyToEdit.website || '',
+      industry: companyToEdit.industry || '',
+      is_active: companyToEdit.is_active,
+    });
+    setShowEditCompanyModal(true);
+  };
+
+  const closeEditCompanyModal = () => {
+    setShowEditCompanyModal(false);
+    setEditingCompany(null);
+    setEditCompanyData({
+      company_name: '',
+      address_street: '',
+      address_city: '',
+      address_state: '',
+      address_zip: '',
+      address_country: 'USA',
+      phone: '',
+      email: '',
+      website: '',
+      industry: '',
+      is_active: true,
+    });
+  };
+
+  const saveCompanyChanges = async () => {
+    if (!editingCompany) return;
+
+    try {
+      const response = await fetch('/api/admin/update-company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: editingCompany.company_id,
+          ...editCompanyData
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update the companies list with the new data
+        setCompanies(companies.map(c =>
+          c.company_id === editingCompany.company_id ? data.company : c
+        ));
+        closeEditCompanyModal();
+        alert('Company updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update company');
+      }
+    } catch (error) {
+      console.error('Update company error:', error);
+      alert('Failed to update company');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -407,14 +595,14 @@ export default function AdminDashboard() {
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Response Rate</dt>
-                      <dd className="text-lg font-medium text-gray-900">0%</dd>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Companies</dt>
+                      <dd className="text-lg font-medium text-gray-900">{companies.length}</dd>
                     </dl>
                   </div>
                 </div>
@@ -554,6 +742,69 @@ export default function AdminDashboard() {
                 ))
               ) : (
                 <li className="px-4 py-8 text-center text-gray-500">No questions found.</li>
+              )}
+            </ul>
+          </div>
+
+          {/* Company Management */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md mt-8">
+            <div className="px-4 py-5 sm:px-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Company Management</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage companies stored in `companydb`.</p>
+                </div>
+                <button
+                  onClick={openCreateCompanyModal}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                >
+                  <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Company
+                </button>
+              </div>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {companies.length > 0 ? (
+                companies.map((company) => (
+                  <li key={company.company_id} className="px-4 py-4 sm:px-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{company.company_name}</div>
+                        <div className="mt-1 text-sm text-gray-500">
+                          {company.industry && <span>Industry: <span className="font-medium">{company.industry}</span></span>}
+                          {company.address_city && company.address_state && (
+                            <> · {company.address_city}, {company.address_state}</>
+                          )}
+                          {company.email && <> · {company.email}</>}
+                        </div>
+                        {company.website && (
+                          <div className="mt-1 text-sm text-blue-600">
+                            <a href={company.website} target="_blank" rel="noopener noreferrer">
+                              {company.website}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${company.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {company.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        <button
+                          onClick={() => openEditCompanyModal(company)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-xs font-medium"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li className="px-4 py-8 text-center text-gray-500">
+                  No companies found. Companies will appear here after creation.
+                </li>
               )}
             </ul>
           </div>
@@ -972,6 +1223,324 @@ export default function AdminDashboard() {
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Create Question
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Company Modal */}
+      {showCreateCompanyModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Create Company</h3>
+              <button
+                onClick={closeCreateCompanyModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                <input
+                  type="text"
+                  value={createCompanyData.company_name}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, company_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  required
+                  placeholder="Enter company name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <input
+                  type="text"
+                  value={createCompanyData.industry}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, industry: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="e.g. Technology, Healthcare, Finance"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                <input
+                  type="text"
+                  value={createCompanyData.address_street}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, address_street: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={createCompanyData.address_city}
+                    onChange={(e) => setCreateCompanyData({ ...createCompanyData, address_city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Anytown"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    value={createCompanyData.address_state}
+                    onChange={(e) => setCreateCompanyData({ ...createCompanyData, address_state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="CA"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <input
+                    type="text"
+                    value={createCompanyData.address_zip}
+                    onChange={(e) => setCreateCompanyData({ ...createCompanyData, address_zip: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="12345"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <input
+                    type="text"
+                    value={createCompanyData.address_country}
+                    onChange={(e) => setCreateCompanyData({ ...createCompanyData, address_country: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="USA"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={createCompanyData.phone}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={createCompanyData.email}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="contact@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  value={createCompanyData.website}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, website: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="https://www.company.com"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={createCompanyData.is_active}
+                  onChange={(e) => setCreateCompanyData({ ...createCompanyData, is_active: e.target.checked })}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">Active</label>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeCreateCompanyModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createCompany}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Create Company
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Company Modal */}
+      {showEditCompanyModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Company</h3>
+              <button
+                onClick={closeEditCompanyModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                <input
+                  type="text"
+                  value={editCompanyData.company_name}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, company_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  required
+                  placeholder="Enter company name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <input
+                  type="text"
+                  value={editCompanyData.industry}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, industry: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="e.g. Technology, Healthcare, Finance"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                <input
+                  type="text"
+                  value={editCompanyData.address_street}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, address_street: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={editCompanyData.address_city}
+                    onChange={(e) => setEditCompanyData({ ...editCompanyData, address_city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Anytown"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    value={editCompanyData.address_state}
+                    onChange={(e) => setEditCompanyData({ ...editCompanyData, address_state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="CA"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <input
+                    type="text"
+                    value={editCompanyData.address_zip}
+                    onChange={(e) => setEditCompanyData({ ...editCompanyData, address_zip: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="12345"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <input
+                    type="text"
+                    value={editCompanyData.address_country}
+                    onChange={(e) => setEditCompanyData({ ...editCompanyData, address_country: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="USA"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editCompanyData.phone}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editCompanyData.email}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="contact@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  value={editCompanyData.website}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, website: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="https://www.company.com"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={editCompanyData.is_active}
+                  onChange={(e) => setEditCompanyData({ ...editCompanyData, is_active: e.target.checked })}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">Active</label>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeEditCompanyModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveCompanyChanges}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Save Changes
               </button>
             </div>
           </div>
