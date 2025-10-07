@@ -54,6 +54,19 @@ interface Survey {
   question_count?: number;
 }
 
+interface SurveyQuestion {
+  survey_question_id: number;
+  survey_id: number;
+  question_id: number;
+  sort_order: number;
+  is_required: boolean;
+  question_text: string;
+  question_type: string;
+  category?: string;
+  is_active: boolean;
+  required: boolean;
+}
+
 interface Question {
   question_id: number;
   question_text: string;
@@ -171,6 +184,9 @@ export default function AdminDashboard() {
     end_date: '',
     selectedQuestionIds: [] as number[],
   });
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewSurvey, setPreviewSurvey] = useState<Survey | null>(null);
+  const [previewQuestions, setPreviewQuestions] = useState<SurveyQuestion[]>([]);
   const [activeSection, setActiveSection] = useState('overview');
 
   useEffect(() => {
@@ -752,6 +768,33 @@ export default function AdminDashboard() {
     }
   };
 
+  const openPreviewModal = async (survey: Survey) => {
+    setPreviewSurvey(survey);
+
+    try {
+      // Fetch questions for this survey from the junction table
+      const response = await fetch(`/api/admin/survey-questions/${survey.survey_id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPreviewQuestions(data.questions || []);
+      } else {
+        console.error('Failed to fetch survey questions');
+        setPreviewQuestions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching survey questions:', error);
+      setPreviewQuestions([]);
+    }
+
+    setShowPreviewModal(true);
+  };
+
+  const closePreviewModal = () => {
+    setShowPreviewModal(false);
+    setPreviewSurvey(null);
+    setPreviewQuestions([]);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1270,6 +1313,12 @@ export default function AdminDashboard() {
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${survey.is_public ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
                               {survey.is_public ? 'Public' : 'Private'}
                             </span>
+                            <button
+                              onClick={() => openPreviewModal(survey)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium mr-2"
+                            >
+                              Preview
+                            </button>
                             <button
                               onClick={() => openEditSurveyModal(survey)}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium"
@@ -2137,6 +2186,147 @@ export default function AdminDashboard() {
                   className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
                   Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Survey Preview Modal */}
+      {showPreviewModal && previewSurvey && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-2/3 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
+            <div className="mt-3">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Survey Preview</h3>
+                  <h4 className="text-xl font-semibold text-gray-700">{previewSurvey.survey_title}</h4>
+                  {previewSurvey.survey_description && (
+                    <p className="text-gray-600 mt-1">{previewSurvey.survey_description}</p>
+                  )}
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                    {previewSurvey.company_name && <span>Company: {previewSurvey.company_name}</span>}
+                    <span>Questions: {previewQuestions.length}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      previewSurvey.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {previewSurvey.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      previewSurvey.is_public ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {previewSurvey.is_public ? 'Public' : 'Private'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={closePreviewModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Survey Questions */}
+              <div className="space-y-6">
+                {previewQuestions.length > 0 ? (
+                  previewQuestions.map((question, index) => (
+                    <div key={question.question_id} className="bg-gray-50 p-6 rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h5 className="text-lg font-medium text-gray-900 mb-1">
+                            Question {index + 1}
+                            {question.is_required && <span className="text-red-500 ml-1">*</span>}
+                          </h5>
+                          <p className="text-gray-700">{question.question_text}</p>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            question.question_type === 'text' ? 'bg-blue-100 text-blue-800' :
+                            question.question_type === 'multiple_choice' ? 'bg-green-100 text-green-800' :
+                            question.question_type === 'rating' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {question.question_type.replace('_', ' ')}
+                          </span>
+                          {question.is_required && (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                              Required
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Question Input Simulation */}
+                      <div className="mt-3">
+                        {question.question_type === 'text' && (
+                          <textarea
+                            placeholder="Enter your response here..."
+                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            rows={3}
+                            disabled
+                          />
+                        )}
+
+                        {question.question_type === 'multiple_choice' && (
+                          <div className="space-y-2">
+                            <div className="flex items-center">
+                              <input type="radio" name={`question-${question.question_id}`} disabled className="mr-2" />
+                              <label className="text-gray-600">Option 1</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input type="radio" name={`question-${question.question_id}`} disabled className="mr-2" />
+                              <label className="text-gray-600">Option 2</label>
+                            </div>
+                            <div className="flex items-center">
+                              <input type="radio" name={`question-${question.question_id}`} disabled className="mr-2" />
+                              <label className="text-gray-600">Option 3</label>
+                            </div>
+                          </div>
+                        )}
+
+                        {question.question_type === 'rating' && (
+                          <div className="flex items-center space-x-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                disabled
+                                className="w-8 h-8 text-gray-300 hover:text-yellow-400"
+                              >
+                                ★
+                              </button>
+                            ))}
+                            <span className="ml-2 text-sm text-gray-500">(1-5 scale)</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {question.category && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Category: {question.category}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-lg">No questions found for this survey.</p>
+                    <p className="text-sm mt-1">The survey may not have any questions assigned yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={closePreviewModal}
+                  className="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Close Preview
                 </button>
               </div>
             </div>
