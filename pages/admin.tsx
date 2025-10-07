@@ -757,6 +757,8 @@ export default function AdminDashboard() {
         question_ids: editSurveyData.selectedQuestionIds,
       };
 
+      console.log('Sending survey update data:', surveyData);
+
       const response = await fetch('/api/admin/update-survey', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

@@ -163,27 +163,54 @@ export default async function handler(
     if (question_ids !== undefined) {
       console.log('Updating questions for survey', survey_id, 'with question_ids:', question_ids);
 
-      // First, remove existing questions
-      await pool.query(
-        'DELETE FROM surveyquestiondb WHERE survey_id = $1',
-        [survey_id]
-      );
-
-      // Then add the new questions
-      if (question_ids.length > 0) {
-        try {
-          // Insert each question individually to avoid complex parameterized queries
-          for (let i = 0; i < question_ids.length; i++) {
-            await pool.query(
-              'INSERT INTO surveyquestiondb (survey_id, question_id, sort_order, is_required) VALUES ($1, $2, $3, false)',
-              [survey_id, question_ids[i], i]
-            );
-          }
-          console.log(`Successfully inserted ${question_ids.length} questions for survey ${survey_id}`);
-        } catch (insertError) {
-          console.error('Error inserting survey questions:', insertError);
-          throw insertError;
+      // Handle empty array case
+      if (question_ids.length === 0) {
+        console.log('No questions selected, deleting all existing questions for survey', survey_id);
+        await pool.query(
+          'DELETE FROM surveyquestiondb WHERE survey_id = $1',
+          [survey_id]
+        );
+        console.log('Successfully removed all questions from survey', survey_id);
+      } else {
+        // Validate question_ids
+        if (!Array.isArray(question_ids)) {
+          throw new Error('question_ids must be an array');
         }
+
+        // Validate that all question_ids are numbers
+        for (const qid of question_ids) {
+          if (typeof qid !== 'number' || isNaN(qid)) {
+            throw new Error(`Invalid question_id: ${qid} (type: ${typeof qid})`);
+          }
+        }
+
+        // Check if questions exist in database
+        const questionCheck = await pool.query(
+          'SELECT question_id FROM questiondb WHERE question_id = ANY($1::int[])',
+          [question_ids]
+        );
+
+        if (questionCheck.rows.length !== question_ids.length) {
+          const foundIds = questionCheck.rows.map(row => row.question_id);
+          const missingIds = question_ids.filter(id => !foundIds.includes(id));
+          throw new Error(`Questions not found in database: ${missingIds.join(', ')}`);
+        }
+
+        // First, remove existing questions
+        await pool.query(
+          'DELETE FROM surveyquestiondb WHERE survey_id = $1',
+          [survey_id]
+        );
+
+        // Then add the new questions
+        for (let i = 0; i < question_ids.length; i++) {
+          console.log(`Inserting question ${question_ids[i]} at position ${i} for survey ${survey_id}`);
+          await pool.query(
+            'INSERT INTO surveyquestiondb (survey_id, question_id, sort_order, is_required) VALUES ($1, $2, $3, false)',
+            [survey_id, question_ids[i], i]
+          );
+        }
+        console.log(`Successfully inserted ${question_ids.length} questions for survey ${survey_id}`);
       }
     }
 
@@ -194,6 +221,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Update survey error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: `Internal server error: ${errorMessage}` });
   }
 }
