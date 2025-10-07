@@ -18,20 +18,6 @@ interface User {
   updated_at?: string;
 }
 
-interface Question {
-  question_id: number;
-  question_text: string;
-  question_type: string;
-  category?: string | null;
-  company_id?: number | null;
-  created_by_user_id?: number | null;
-  created_at?: string;
-  updated_at?: string;
-  is_active: boolean;
-  sort_order: number;
-  required: boolean;
-}
-
 interface Company {
   company_id: number;
   company_name: string;
@@ -48,6 +34,38 @@ interface Company {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+interface Survey {
+  survey_id: number;
+  survey_title: string;
+  survey_description?: string;
+  company_id?: number;
+  company_name?: string;
+  created_by_user_id: number;
+  created_by_name?: string;
+  is_active: boolean;
+  is_public: boolean;
+  allow_anonymous: boolean;
+  start_date?: string;
+  end_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  question_count?: number;
+}
+
+interface Question {
+  question_id: number;
+  question_text: string;
+  question_type: string;
+  category?: string | null;
+  company_id?: number | null;
+  created_by_user_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  is_active: boolean;
+  sort_order: number;
+  required: boolean;
 }
 
 export default function AdminDashboard() {
@@ -128,6 +146,35 @@ export default function AdminDashboard() {
     is_active: true,
   });
 
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
+  const [showCreateSurveyModal, setShowCreateSurveyModal] = useState(false);
+  const [showEditSurveyModal, setShowEditSurveyModal] = useState(false);
+  const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
+  const [createSurveyData, setCreateSurveyData] = useState({
+    survey_title: '',
+    survey_description: '',
+    company_id: '',
+    is_active: true,
+    is_public: false,
+    allow_anonymous: false,
+    start_date: '',
+    end_date: '',
+    selectedQuestionIds: [] as number[],
+  });
+  const [editSurveyData, setEditSurveyData] = useState({
+    survey_title: '',
+    survey_description: '',
+    company_id: '',
+    is_active: true,
+    is_public: false,
+    allow_anonymous: false,
+    start_date: '',
+    end_date: '',
+    selectedQuestionIds: [] as number[],
+  });
+  const [activeSection, setActiveSection] = useState('overview');
+
   useEffect(() => {
     // Check if user is logged in and is admin
     const userData = localStorage.getItem('user');
@@ -146,6 +193,8 @@ export default function AdminDashboard() {
     fetchUsers();
     fetchQuestions();
     fetchCompanies();
+    fetchSurveys();
+    fetchAvailableQuestions();
   }, [router]);
 
   const fetchUsers = async () => {
@@ -171,6 +220,30 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch companies:', error);
+    }
+  };
+
+  const fetchSurveys = async () => {
+    try {
+      const response = await fetch('/api/admin/surveys');
+      if (response.ok) {
+        const data = await response.json();
+        setSurveys(data.surveys || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch surveys:', error);
+    }
+  };
+
+  const fetchAvailableQuestions = async () => {
+    try {
+      const response = await fetch('/api/admin/available-questions');
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableQuestions(data.questions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch available questions:', error);
     }
   };
 
@@ -505,6 +578,164 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Update company error:', error);
       alert('Failed to update company');
+    }
+  };
+
+  // Survey Management Functions
+  const openCreateSurveyModal = () => {
+    setCreateSurveyData({
+      survey_title: '',
+      survey_description: '',
+      company_id: '',
+      is_active: true,
+      is_public: false,
+      allow_anonymous: false,
+      start_date: '',
+      end_date: '',
+      selectedQuestionIds: [],
+    });
+    setShowCreateSurveyModal(true);
+  };
+
+  const closeCreateSurveyModal = () => {
+    setShowCreateSurveyModal(false);
+    setCreateSurveyData({
+      survey_title: '',
+      survey_description: '',
+      company_id: '',
+      is_active: true,
+      is_public: false,
+      allow_anonymous: false,
+      start_date: '',
+      end_date: '',
+      selectedQuestionIds: [],
+    });
+  };
+
+  const createSurvey = async () => {
+    try {
+      const surveyData = {
+        survey_title: createSurveyData.survey_title,
+        survey_description: createSurveyData.survey_description,
+        company_id: createSurveyData.company_id ? parseInt(createSurveyData.company_id) : undefined,
+        is_active: createSurveyData.is_active,
+        is_public: createSurveyData.is_public,
+        allow_anonymous: createSurveyData.allow_anonymous,
+        start_date: createSurveyData.start_date || undefined,
+        end_date: createSurveyData.end_date || undefined,
+        question_ids: createSurveyData.selectedQuestionIds,
+      };
+
+      const response = await fetch('/api/admin/create-survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(surveyData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Add the new survey to the surveys list
+        setSurveys([...surveys, data.survey]);
+        closeCreateSurveyModal();
+        alert('Survey created successfully!');
+      } else {
+        alert(data.error || 'Failed to create survey');
+      }
+    } catch (error) {
+      console.error('Create survey error:', error);
+      alert('Failed to create survey');
+    }
+  };
+
+  const openEditSurveyModal = (surveyToEdit: Survey) => {
+    setEditingSurvey(surveyToEdit);
+    setEditSurveyData({
+      survey_title: surveyToEdit.survey_title,
+      survey_description: surveyToEdit.survey_description || '',
+      company_id: surveyToEdit.company_id?.toString() || '',
+      is_active: surveyToEdit.is_active,
+      is_public: surveyToEdit.is_public,
+      allow_anonymous: surveyToEdit.allow_anonymous,
+      start_date: surveyToEdit.start_date || '',
+      end_date: surveyToEdit.end_date || '',
+      selectedQuestionIds: [], // TODO: Load existing questions
+    });
+    setShowEditSurveyModal(true);
+  };
+
+  const closeEditSurveyModal = () => {
+    setShowEditSurveyModal(false);
+    setEditingSurvey(null);
+    setEditSurveyData({
+      survey_title: '',
+      survey_description: '',
+      company_id: '',
+      is_active: true,
+      is_public: false,
+      allow_anonymous: false,
+      start_date: '',
+      end_date: '',
+      selectedQuestionIds: [],
+    });
+  };
+
+  const saveSurveyChanges = async () => {
+    if (!editingSurvey) return;
+
+    try {
+      const surveyData = {
+        survey_id: editingSurvey.survey_id,
+        survey_title: editSurveyData.survey_title,
+        survey_description: editSurveyData.survey_description,
+        company_id: editSurveyData.company_id ? parseInt(editSurveyData.company_id) : undefined,
+        is_active: editSurveyData.is_active,
+        is_public: editSurveyData.is_public,
+        allow_anonymous: editSurveyData.allow_anonymous,
+        start_date: editSurveyData.start_date || undefined,
+        end_date: editSurveyData.end_date || undefined,
+        question_ids: editSurveyData.selectedQuestionIds,
+      };
+
+      const response = await fetch('/api/admin/update-survey', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(surveyData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update the surveys list with the new data
+        setSurveys(surveys.map(s =>
+          s.survey_id === editingSurvey.survey_id ? data.survey : s
+        ));
+        closeEditSurveyModal();
+        alert('Survey updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update survey');
+      }
+    } catch (error) {
+      console.error('Update survey error:', error);
+      alert('Failed to update survey');
+    }
+  };
+
+  const toggleQuestionSelection = (questionId: number, isCreate: boolean = true) => {
+    const data = isCreate ? createSurveyData : editSurveyData;
+    const setter = isCreate ? setCreateSurveyData : setEditSurveyData;
+
+    const isSelected = data.selectedQuestionIds.includes(questionId);
+    if (isSelected) {
+      setter({
+        ...data,
+        selectedQuestionIds: data.selectedQuestionIds.filter(id => id !== questionId)
+      });
+    } else {
+      setter({
+        ...data,
+        selectedQuestionIds: [...data.selectedQuestionIds, questionId]
+      });
     }
   };
 

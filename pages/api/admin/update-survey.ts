@@ -1,0 +1,179 @@
+// pages/api/admin/update-survey.ts
+import pool from '../../../lib/neon-db';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+interface Survey {
+  survey_id: number;
+  survey_title: string;
+  survey_description?: string;
+  company_id?: number;
+  created_by_user_id: number;
+  is_active: boolean;
+  is_public: boolean;
+  allow_anonymous: boolean;
+  start_date?: string;
+  end_date?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface UpdateSurveyRequest {
+  survey_id: number;
+  survey_title?: string;
+  survey_description?: string;
+  company_id?: number;
+  is_active?: boolean;
+  is_public?: boolean;
+  allow_anonymous?: boolean;
+  start_date?: string;
+  end_date?: string;
+  question_ids?: number[]; // Array of question IDs to include in the survey
+}
+
+interface UpdateSurveyResponse {
+  success: boolean;
+  survey?: Survey;
+  error?: string;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<UpdateSurveyResponse>
+) {
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  const {
+    survey_id,
+    survey_title,
+    survey_description,
+    company_id,
+    is_active,
+    is_public,
+    allow_anonymous,
+    start_date,
+    end_date,
+    question_ids
+  }: UpdateSurveyRequest = req.body;
+
+  if (!survey_id) {
+    return res.status(400).json({ success: false, error: 'Survey ID is required' });
+  }
+
+  try {
+    // Check if survey exists
+    const existingSurvey = await pool.query(
+      'SELECT survey_id FROM surveydb WHERE survey_id = $1',
+      [survey_id]
+    );
+
+    if (existingSurvey.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Survey not found' });
+    }
+
+    // Build dynamic update query
+    const updateFields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (survey_title !== undefined) {
+      updateFields.push(`survey_title = $${paramIndex++}`);
+      values.push(survey_title.trim());
+    }
+    if (survey_description !== undefined) {
+      updateFields.push(`survey_description = $${paramIndex++}`);
+      values.push(survey_description?.trim() || null);
+    }
+    if (company_id !== undefined) {
+      updateFields.push(`company_id = $${paramIndex++}`);
+      values.push(company_id || null);
+    }
+    if (is_active !== undefined) {
+      updateFields.push(`is_active = $${paramIndex++}`);
+      values.push(is_active);
+    }
+    if (is_public !== undefined) {
+      updateFields.push(`is_public = $${paramIndex++}`);
+      values.push(is_public);
+    }
+    if (allow_anonymous !== undefined) {
+      updateFields.push(`allow_anonymous = $${paramIndex++}`);
+      values.push(allow_anonymous);
+    }
+    if (start_date !== undefined) {
+      updateFields.push(`start_date = $${paramIndex++}`);
+      values.push(start_date || null);
+    }
+    if (end_date !== undefined) {
+      updateFields.push(`end_date = $${paramIndex++}`);
+      values.push(end_date || null);
+    }
+
+    let updateResult;
+    if (updateFields.length > 0) {
+      // Add survey_id as the last parameter
+      values.push(survey_id);
+
+      const updateQuery = `
+        UPDATE surveydb
+        SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+        WHERE survey_id = $${paramIndex}
+        RETURNING *
+      `;
+
+      updateResult = await pool.query(updateQuery, values);
+    } else {
+      // Just fetch the current survey if no updates
+      updateResult = await pool.query(
+        'SELECT * FROM surveydb WHERE survey_id = $1',
+        [survey_id]
+      );
+    }
+
+    const updatedSurvey: Survey = {
+      survey_id: updateResult.rows[0].survey_id,
+      survey_title: updateResult.rows[0].survey_title,
+      survey_description: updateResult.rows[0].survey_description,
+      company_id: updateResult.rows[0].company_id,
+      created_by_user_id: updateResult.rows[0].created_by_user_id,
+      is_active: updateResult.rows[0].is_active,
+      is_public: updateResult.rows[0].is_public,
+      allow_anonymous: updateResult.rows[0].allow_anonymous,
+      start_date: updateResult.rows[0].start_date,
+      end_date: updateResult.rows[0].end_date,
+      created_at: updateResult.rows[0].created_at,
+      updated_at: updateResult.rows[0].updated_at
+    };
+
+    // If question_ids were provided, update the survey questions
+    if (question_ids !== undefined) {
+      // First, remove existing questions
+      await pool.query(
+        'DELETE FROM surveyquestiondb WHERE survey_id = $1',
+        [survey_id]
+      );
+
+      // Then add the new questions
+      if (question_ids.length > 0) {
+        const surveyQuestionValues = question_ids.map((questionId, index) =>
+          `(${survey_id}, ${questionId}, ${index}, false)`
+        ).join(', ');
+
+        await pool.query(`
+          INSERT INTO surveyquestiondb (survey_id, question_id, sort_order, is_required)
+          VALUES ${surveyQuestionValues}
+        `);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      survey: updatedSurvey
+    });
+
+  } catch (error) {
+    console.error('Update survey error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+}
