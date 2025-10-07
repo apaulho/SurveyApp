@@ -1,4 +1,4 @@
-// pages/api/admin/survey-questions/[surveyId].ts
+// pages/api/admin/get-survey-questions.ts
 import pool from '../../../lib/neon-db';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -41,7 +41,6 @@ export default async function handler(
   }
 
   try {
-    // Fetch questions for this survey with their metadata
     const query = `
       SELECT
         sq.survey_question_id,
@@ -82,11 +81,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Survey questions fetch error:', error);
-    // Provide more detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({
-      success: false,
-      error: `Internal server error: ${errorMessage}`
-    });
+    res.status(500).json({ success: false, error: `Internal server error: ${errorMessage}` });
   }
 }

@@ -773,7 +773,7 @@ export default function AdminDashboard() {
 
     try {
       // Fetch questions for this survey from the junction table
-      const response = await fetch(`/api/admin/survey-questions/${survey.survey_id}`);
+      const response = await fetch(`/api/admin/get-survey-questions?surveyId=${survey.survey_id}`);
       if (response.ok) {
         const data = await response.json();
         setPreviewQuestions(data.questions || []);
