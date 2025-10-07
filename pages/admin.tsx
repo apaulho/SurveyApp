@@ -18,12 +18,28 @@ interface User {
   updated_at?: string;
 }
 
+interface Question {
+  question_id: number;
+  question_text: string;
+  question_type: string;
+  category?: string | null;
+  company_id?: number | null;
+  created_by_user_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  is_active: boolean;
+  sort_order: number;
+  required: boolean;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [showCreateQuestionModal, setShowCreateQuestionModal] = useState(false);
   const [createFormData, setCreateFormData] = useState({
     username: '',
     email: '',
@@ -54,6 +70,15 @@ export default function AdminDashboard() {
     level: 2002
   });
 
+  const [createQuestionData, setCreateQuestionData] = useState({
+    question_text: '',
+    question_type: 'text',
+    category: '',
+    sort_order: 0,
+    required: false,
+    is_active: true,
+  });
+
   useEffect(() => {
     // Check if user is logged in and is admin
     const userData = localStorage.getItem('user');
@@ -70,6 +95,7 @@ export default function AdminDashboard() {
 
     setUser(parsedUser);
     fetchUsers();
+    fetchQuestions();
   }, [router]);
 
   const fetchUsers = async () => {
@@ -83,6 +109,61 @@ export default function AdminDashboard() {
       console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Survey Questions: modal controls and create action
+  const openCreateQuestionModal = () => {
+    setCreateQuestionData({
+      question_text: '',
+      question_type: 'text',
+      category: '',
+      sort_order: 0,
+      required: false,
+      is_active: true,
+    });
+    setShowCreateQuestionModal(true);
+  };
+
+  const closeCreateQuestionModal = () => {
+    setShowCreateQuestionModal(false);
+  };
+
+  const createQuestion = async () => {
+    try {
+      const payload = {
+        ...createQuestionData,
+        category: createQuestionData.category?.trim() || null,
+        created_by_user_id: user?.user_id || null,
+      };
+      const response = await fetch('/api/admin/create-question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setQuestions((prev) => [...prev, data.question].sort((a, b) => (a.sort_order - b.sort_order) || (a.question_id - b.question_id)));
+        closeCreateQuestionModal();
+        alert('Question created successfully!');
+      } else {
+        alert(data.error || 'Failed to create question');
+      }
+    } catch (error) {
+      console.error('Create question error:', error);
+      alert('Failed to create question');
+    }
+  };
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch('/api/admin/questions');
+      if (response.ok) {
+        const data = await response.json();
+        setQuestions(data.questions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error);
     }
   };
 
@@ -427,6 +508,55 @@ export default function AdminDashboard() {
               )}
             </ul>
           </div>
+
+          {/* Survey Questions Management */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-md mt-8">
+            <div className="px-4 py-5 sm:px-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Survey Questions</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-gray-500">Manage questions stored in `questiondb`.</p>
+                </div>
+                <button
+                  onClick={openCreateQuestionModal}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+               >
+                  <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Question
+                </button>
+              </div>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {questions.length > 0 ? (
+                questions.map((q) => (
+                  <li key={q.question_id} className="px-4 py-4 sm:px-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{q.question_text}</div>
+                        <div className="mt-1 text-sm text-gray-500">
+                          Type: <span className="font-medium">{q.question_type}</span>
+                          {q.category ? <> · Category: <span className="font-medium">{q.category}</span></> : null}
+                          <> · Sort: <span className="font-medium">{q.sort_order}</span></>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${q.required ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {q.required ? 'Required' : 'Optional'}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${q.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {q.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li className="px-4 py-8 text-center text-gray-500">No questions found.</li>
+              )}
+            </ul>
+          </div>
         </div>
       </main>
 
@@ -739,6 +869,109 @@ export default function AdminDashboard() {
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 Create User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Question Modal */}
+      {showCreateQuestionModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Create New Question</h3>
+              <button onClick={closeCreateQuestionModal} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Question Text *</label>
+                <textarea
+                  value={createQuestionData.question_text}
+                  onChange={(e) => setCreateQuestionData({ ...createQuestionData, question_text: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  rows={3}
+                  placeholder="Enter the question text"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select
+                    value={createQuestionData.question_type}
+                    onChange={(e) => setCreateQuestionData({ ...createQuestionData, question_type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="text">Text</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="rating">Rating</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    value={createQuestionData.category}
+                    onChange={(e) => setCreateQuestionData({ ...createQuestionData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. Satisfaction"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                  <input
+                    type="number"
+                    value={createQuestionData.sort_order}
+                    onChange={(e) => setCreateQuestionData({ ...createQuestionData, sort_order: parseInt(e.target.value || '0', 10) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-center space-x-6 mt-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={createQuestionData.required}
+                      onChange={(e) => setCreateQuestionData({ ...createQuestionData, required: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Required</span>
+                  </label>
+
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={createQuestionData.is_active}
+                      onChange={(e) => setCreateQuestionData({ ...createQuestionData, is_active: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={closeCreateQuestionModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createQuestion}
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Create Question
               </button>
             </div>
           </div>
