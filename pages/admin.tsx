@@ -885,6 +885,12 @@ export default function AdminDashboard() {
         setQuestions(questions.map(q =>
           q.question_id === editingQuestion.question_id ? data.question : q
         ));
+        
+        // Also update the availableQuestions list used in survey modals
+        setAvailableQuestions(availableQuestions.map(q =>
+          q.question_id === editingQuestion.question_id ? data.question : q
+        ));
+        
         closeEditQuestionModal();
         alert('Question updated successfully!');
       } else {
@@ -2199,6 +2205,12 @@ export default function AdminDashboard() {
                             {question.category && ` · Category: ${question.category}`}
                           </div>
                         </div>
+                        <button
+                          onClick={() => openEditQuestionModal(question)}
+                          className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
+                        >
+                          Edit
+                        </button>
                       </div>
                     ))
                   ) : (
@@ -2337,6 +2349,12 @@ export default function AdminDashboard() {
                             {question.category && ` · Category: ${question.category}`}
                           </div>
                         </div>
+                        <button
+                          onClick={() => openEditQuestionModal(question)}
+                          className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
+                        >
+                          Edit
+                        </button>
                       </div>
                     ))
                   ) : (
