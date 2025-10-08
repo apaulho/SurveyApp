@@ -1,9 +1,11 @@
 [build]
-  command = "npm run build"
+  command = "npm ci && npm run build"
+  ignore = "git diff --quiet HEAD^ HEAD -- package.json package-lock.json netlify.toml"
 
 [build.environment]
   NODE_VERSION = "20"
   NODE_ENV = "production"
+  NPM_FLAGS = "--production=false"
 
 # Next.js plugin handles the build automatically
 [[plugins]]
