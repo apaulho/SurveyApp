@@ -104,62 +104,77 @@ export default async function handler(
     console.log('Survey exists, proceeding with update...');
 
     // Build dynamic update query
-    const updateFields: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
-
-    if (survey_title !== undefined) {
-      updateFields.push(`survey_title = $${paramIndex++}`);
-      values.push(survey_title.trim());
-    }
-    if (survey_description !== undefined) {
-      updateFields.push(`survey_description = $${paramIndex++}`);
-      values.push(survey_description?.trim() || null);
-    }
-    if (company_id !== undefined) {
-      updateFields.push(`company_id = $${paramIndex++}`);
-      values.push(company_id || null);
-    }
-    if (is_active !== undefined) {
-      updateFields.push(`is_active = $${paramIndex++}`);
-      values.push(is_active);
-    }
-    if (is_public !== undefined) {
-      updateFields.push(`is_public = $${paramIndex++}`);
-      values.push(is_public);
-    }
-    if (allow_anonymous !== undefined) {
-      updateFields.push(`allow_anonymous = $${paramIndex++}`);
-      values.push(allow_anonymous);
-    }
-    if (start_date !== undefined) {
-      updateFields.push(`start_date = $${paramIndex++}`);
-      values.push(start_date || null);
-    }
-    if (end_date !== undefined) {
-      updateFields.push(`end_date = $${paramIndex++}`);
-      values.push(end_date || null);
-    }
-
     let updateResult;
-    if (updateFields.length > 0) {
-      // Add survey_id as the last parameter
-      values.push(survey_id);
+    try {
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
 
-      const updateQuery = `
-        UPDATE surveydb
-        SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-        WHERE survey_id = $${paramIndex}
-        RETURNING *
-      `;
+      if (survey_title !== undefined) {
+        updateFields.push(`survey_title = $${paramIndex++}`);
+        values.push(survey_title.trim());
+      }
+      if (survey_description !== undefined) {
+        updateFields.push(`survey_description = $${paramIndex++}`);
+        values.push(survey_description?.trim() || null);
+      }
+      if (company_id !== undefined) {
+        updateFields.push(`company_id = $${paramIndex++}`);
+        values.push(company_id || null);
+      }
+      if (is_active !== undefined) {
+        updateFields.push(`is_active = $${paramIndex++}`);
+        values.push(is_active);
+      }
+      if (is_public !== undefined) {
+        updateFields.push(`is_public = $${paramIndex++}`);
+        values.push(is_public);
+      }
+      if (allow_anonymous !== undefined) {
+        updateFields.push(`allow_anonymous = $${paramIndex++}`);
+        values.push(allow_anonymous);
+      }
+      if (start_date !== undefined) {
+        updateFields.push(`start_date = $${paramIndex++}`);
+        values.push(start_date || null);
+      }
+      if (end_date !== undefined) {
+        updateFields.push(`end_date = $${paramIndex++}`);
+        values.push(end_date || null);
+      }
 
-      updateResult = await pool.query(updateQuery, values);
-    } else {
-      // Just fetch the current survey if no updates
-      updateResult = await pool.query(
-        'SELECT * FROM surveydb WHERE survey_id = $1',
-        [survey_id]
-      );
+      console.log('Update fields:', updateFields);
+      console.log('Update values:', values);
+
+      if (updateFields.length > 0) {
+        // Add survey_id as the last parameter
+        values.push(survey_id);
+
+        const updateQuery = `
+          UPDATE surveydb
+          SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+          WHERE survey_id = $${paramIndex}
+          RETURNING *
+        `;
+
+        console.log('Executing update query:', updateQuery);
+        console.log('With parameters:', values);
+
+        updateResult = await pool.query(updateQuery, values);
+      } else {
+        // Just fetch the current survey if no updates
+        console.log('No fields to update, fetching current survey');
+        updateResult = await pool.query(
+          'SELECT * FROM surveydb WHERE survey_id = $1',
+          [survey_id]
+        );
+      }
+
+      console.log('Update result:', updateResult.rows[0]);
+
+    } catch (updateError) {
+      console.error('Error during survey update:', updateError);
+      throw updateError;
     }
 
     const updatedSurvey: Survey = {
