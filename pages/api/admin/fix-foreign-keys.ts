@@ -1,5 +1,5 @@
 // pages/api/admin/fix-foreign-keys.ts
-const pool = require('../../../lib/neon-db').default;
+import pool from '../../../lib/neon-db';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface FixResponse {
@@ -59,7 +59,7 @@ export default async function handler(
       SET created_by_user_id = $1
       WHERE created_by_user_id NOT IN (SELECT user_id FROM userdb)
     `, [firstUserId]);
-    surveysFixed = surveyFix.rowCount;
+    surveysFixed = surveyFix.rowCount || 0;
     console.log('Fixed surveys:', surveysFixed);
 
     // Fix questions with invalid created_by_user_id
@@ -68,7 +68,7 @@ export default async function handler(
       SET created_by_user_id = $1
       WHERE created_by_user_id NOT IN (SELECT user_id FROM userdb)
     `, [firstUserId]);
-    questionsFixed = questionFix.rowCount;
+    questionsFixed = questionFix.rowCount || 0;
     console.log('Fixed questions:', questionsFixed);
 
     res.status(200).json({
