@@ -2100,7 +2100,7 @@ export default function AdminDashboard() {
       {/* Create Survey Modal */}
       {showCreateSurveyModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-screen">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Survey</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -2188,18 +2188,18 @@ export default function AdminDashboard() {
 
               <div className="mb-6">
                 <h4 className="text-md font-medium text-gray-900 mb-3">Select Questions for Survey</h4>
-                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md">
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md min-w-0">
                   {availableQuestions.length > 0 ? (
                     availableQuestions.map((question) => (
-                      <div key={question.question_id} className="flex items-center p-3 border-b border-gray-200 last:border-b-0">
+                      <div key={question.question_id} className="flex items-start p-3 border-b border-gray-200 last:border-b-0 min-w-0">
                         <input
                           type="checkbox"
                           checked={createSurveyData.selectedQuestionIds.includes(question.question_id)}
                           onChange={() => toggleQuestionSelection(question.question_id)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded mt-1 flex-shrink-0"
                         />
-                        <div className="ml-3 flex-1">
-                          <div className="text-sm font-medium text-gray-900">{question.question_text}</div>
+                        <div className="ml-3 flex-1 min-w-0 overflow-hidden">
+                          <div className="text-sm font-medium text-gray-900 break-words pr-2">{question.question_text}</div>
                           <div className="text-xs text-gray-500">
                             Type: {question.question_type}
                             {question.category && ` · Category: ${question.category}`}
@@ -2207,7 +2207,7 @@ export default function AdminDashboard() {
                         </div>
                         <button
                           onClick={() => openEditQuestionModal(question)}
-                          className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
+                          className="ml-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium flex-shrink-0 whitespace-nowrap"
                         >
                           Edit
                         </button>
@@ -2244,7 +2244,7 @@ export default function AdminDashboard() {
       {/* Edit Survey Modal */}
       {showEditSurveyModal && editingSurvey && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white max-h-screen">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-5/6 lg:w-4/5 xl:w-3/4 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Survey</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -2332,18 +2332,18 @@ export default function AdminDashboard() {
 
               <div className="mb-6">
                 <h4 className="text-md font-medium text-gray-900 mb-3">Select Questions for Survey</h4>
-                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md">
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md min-w-0">
                   {availableQuestions.length > 0 ? (
                     availableQuestions.map((question) => (
-                      <div key={question.question_id} className="flex items-center p-3 border-b border-gray-200 last:border-b-0">
+                      <div key={question.question_id} className="flex items-start p-3 border-b border-gray-200 last:border-b-0 min-w-0">
                         <input
                           type="checkbox"
                           checked={editSurveyData.selectedQuestionIds.includes(question.question_id)}
                           onChange={() => toggleQuestionSelection(question.question_id, false)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded mt-1 flex-shrink-0"
                         />
-                        <div className="ml-3 flex-1">
-                          <div className="text-sm font-medium text-gray-900">{question.question_text}</div>
+                        <div className="ml-3 flex-1 min-w-0 overflow-hidden">
+                          <div className="text-sm font-medium text-gray-900 break-words pr-2">{question.question_text}</div>
                           <div className="text-xs text-gray-500">
                             Type: {question.question_type}
                             {question.category && ` · Category: ${question.category}`}
@@ -2351,7 +2351,7 @@ export default function AdminDashboard() {
                         </div>
                         <button
                           onClick={() => openEditQuestionModal(question)}
-                          className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium"
+                          className="ml-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium flex-shrink-0 whitespace-nowrap"
                         >
                           Edit
                         </button>
