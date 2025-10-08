@@ -44,6 +44,11 @@ export default async function handler(
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  console.log('Update survey request received');
+  console.log('Method:', req.method);
+  console.log('Body keys:', Object.keys(req.body));
+  console.log('Full body:', JSON.stringify(req.body, null, 2));
+
   const {
     survey_id,
     survey_title,
@@ -57,7 +62,7 @@ export default async function handler(
     question_ids
   }: UpdateSurveyRequest = req.body;
 
-  console.log('Update survey request:', {
+  console.log('Parsed data:', {
     survey_id,
     survey_title,
     survey_description,
@@ -67,7 +72,10 @@ export default async function handler(
     allow_anonymous,
     start_date,
     end_date,
-    question_ids
+    question_ids,
+    question_ids_type: typeof question_ids,
+    question_ids_isArray: Array.isArray(question_ids),
+    question_ids_length: question_ids?.length
   });
 
   if (!survey_id) {
@@ -161,7 +169,7 @@ export default async function handler(
 
     // If question_ids were provided, update the survey questions
     if (question_ids !== undefined) {
-      console.log('Updating questions for survey', survey_id, 'with question_ids:', question_ids);
+      console.log('About to process question_ids:', question_ids);
 
       // Handle empty array case
       if (question_ids.length === 0) {
@@ -172,29 +180,39 @@ export default async function handler(
         );
         console.log('Successfully removed all questions from survey', survey_id);
       } else {
+        console.log('Processing non-empty question_ids array');
+
         // Validate question_ids
         if (!Array.isArray(question_ids)) {
+          console.error('question_ids is not an array:', question_ids);
           throw new Error('question_ids must be an array');
         }
 
+        console.log('question_ids is an array, validating individual items...');
+
         // Validate that all question_ids are numbers
         for (const qid of question_ids) {
+          console.log('Checking question_id:', qid, 'type:', typeof qid, 'isNaN:', isNaN(qid));
           if (typeof qid !== 'number' || isNaN(qid)) {
             throw new Error(`Invalid question_id: ${qid} (type: ${typeof qid})`);
           }
         }
 
-        // Check if questions exist in database
-        const questionCheck = await pool.query(
-          'SELECT question_id FROM questiondb WHERE question_id = ANY($1::int[])',
-          [question_ids]
-        );
+        console.log('All question_ids are valid numbers, checking database existence...');
 
-        if (questionCheck.rows.length !== question_ids.length) {
-          const foundIds = questionCheck.rows.map(row => row.question_id);
-          const missingIds = question_ids.filter(id => !foundIds.includes(id));
-          throw new Error(`Questions not found in database: ${missingIds.join(', ')}`);
+        // Check if questions exist in database - check each one individually
+        console.log('Checking question existence individually...');
+        for (const qid of question_ids) {
+          const singleCheck = await pool.query(
+            'SELECT question_id FROM questiondb WHERE question_id = $1',
+            [qid]
+          );
+          if (singleCheck.rows.length === 0) {
+            console.error(`Question ${qid} not found in database`);
+            throw new Error(`Question not found in database: ${qid}`);
+          }
         }
+        console.log('All questions verified to exist in database');
 
         // First, remove existing questions
         await pool.query(
@@ -212,6 +230,8 @@ export default async function handler(
         }
         console.log(`Successfully inserted ${question_ids.length} questions for survey ${survey_id}`);
       }
+    } else {
+      console.log('question_ids is undefined, skipping question updates');
     }
 
     res.status(200).json({
