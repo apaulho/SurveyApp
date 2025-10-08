@@ -42,8 +42,6 @@ interface Survey {
   survey_description?: string;
   company_id?: number;
   company_name?: string;
-  created_by_user_id: number;
-  created_by_name?: string;
   is_active: boolean;
   is_public: boolean;
   allow_anonymous: boolean;
@@ -116,8 +114,17 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [migrationMessage, setMigrationMessage] = useState('');
-
   const [createQuestionData, setCreateQuestionData] = useState({
+    question_text: '',
+    question_type: 'text',
+    category: '',
+    sort_order: 0,
+    required: false,
+    is_active: true,
+  });
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [showEditQuestionModal, setShowEditQuestionModal] = useState(false);
+  const [editQuestionData, setEditQuestionData] = useState({
     question_text: '',
     question_type: 'text',
     category: '',
@@ -828,6 +835,67 @@ export default function AdminDashboard() {
     setPreviewQuestions([]);
   };
 
+  // Question Edit Functions
+  const openEditQuestionModal = (questionToEdit: Question) => {
+    setEditingQuestion(questionToEdit);
+    setEditQuestionData({
+      question_text: questionToEdit.question_text,
+      question_type: questionToEdit.question_type,
+      category: questionToEdit.category || '',
+      sort_order: 0, // Note: sort_order not in current Question interface
+      required: false, // Note: required not in current Question interface
+      is_active: questionToEdit.is_active,
+    });
+    setShowEditQuestionModal(true);
+  };
+
+  const closeEditQuestionModal = () => {
+    setShowEditQuestionModal(false);
+    setEditingQuestion(null);
+    setEditQuestionData({
+      question_text: '',
+      question_type: 'text',
+      category: '',
+      sort_order: 0,
+      required: false,
+      is_active: true,
+    });
+  };
+
+  const saveQuestionChanges = async () => {
+    if (!editingQuestion) return;
+
+    try {
+      const response = await fetch('/api/admin/update-question', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_id: editingQuestion.question_id,
+          question_text: editQuestionData.question_text,
+          question_type: editQuestionData.question_type,
+          category: editQuestionData.category || null,
+          is_active: editQuestionData.is_active,
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update the questions list with the new data
+        setQuestions(questions.map(q =>
+          q.question_id === editingQuestion.question_id ? data.question : q
+        ));
+        closeEditQuestionModal();
+        alert('Question updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update question');
+      }
+    } catch (error) {
+      console.error('Error updating question:', error);
+      alert('Failed to update question');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1286,6 +1354,12 @@ export default function AdminDashboard() {
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${q.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                               {q.is_active ? 'Active' : 'Inactive'}
                             </span>
+                            <button
+                              onClick={() => openEditQuestionModal(q)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium"
+                            >
+                              Edit
+                            </button>
                           </div>
                         </div>
                       </li>
@@ -1331,7 +1405,6 @@ export default function AdminDashboard() {
                               {survey.question_count !== undefined && (
                                 <> · {survey.question_count} question{survey.question_count !== 1 ? 's' : ''}</>
                               )}
-                              {survey.created_by_name && <> · Created by: {survey.created_by_name}</>}
                             </div>
                             {survey.survey_description && (
                               <div className="mt-1 text-sm text-gray-600 max-w-md truncate">
@@ -1691,6 +1764,74 @@ export default function AdminDashboard() {
                   className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Create Question
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Question Modal */}
+      {showEditQuestionModal && editingQuestion && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Question</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Question Text</label>
+                  <textarea
+                    value={editQuestionData.question_text}
+                    onChange={(e) => setEditQuestionData({ ...editQuestionData, question_text: e.target.value })}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Question Type</label>
+                  <select
+                    value={editQuestionData.question_type}
+                    onChange={(e) => setEditQuestionData({ ...editQuestionData, question_type: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="text">Text</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="rating">Rating</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                  <input
+                    type="text"
+                    value={editQuestionData.category}
+                    onChange={(e) => setEditQuestionData({ ...editQuestionData, category: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2 flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={editQuestionData.is_active}
+                      onChange={(e) => setEditQuestionData({ ...editQuestionData, is_active: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label className="ml-2 block text-sm text-gray-900">Active</label>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={closeEditQuestionModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveQuestionChanges}
+                  className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Save Changes
                 </button>
               </div>
             </div>

@@ -7,7 +7,6 @@ interface Survey {
   survey_title: string;
   survey_description?: string;
   company_id?: number;
-  created_by_user_id: number;
   is_active: boolean;
   is_public: boolean;
   allow_anonymous: boolean;
@@ -197,7 +196,6 @@ export default async function handler(
       survey_title: updateResult.rows[0].survey_title,
       survey_description: updateResult.rows[0].survey_description,
       company_id: updateResult.rows[0].company_id,
-      created_by_user_id: updateResult.rows[0].created_by_user_id,
       is_active: updateResult.rows[0].is_active,
       is_public: updateResult.rows[0].is_public,
       allow_anonymous: updateResult.rows[0].allow_anonymous,
