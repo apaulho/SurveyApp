@@ -1,0 +1,14 @@
+MANUAL DEPLOY TRIGGER
+Timestamp: 2025-10-09 10:58:52
+Deploy ID: URGENT_FORCE_614907f
+
+This file change should trigger Netlify to rebuild.
+
+Expected in next deploy:
+- Edit buttons with red borders in survey modals
+- Green "New Question" buttons  
+- Console logging for debugging
+- Question count displays
+- Full editing functionality
+
+If this doesn't work, Netlify webhook may need manual trigger.
