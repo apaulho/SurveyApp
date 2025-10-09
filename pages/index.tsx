@@ -1,39 +1,142 @@
 import React, { useState } from 'react';
 
-interface Question {
-  id: number;
-  question_number: number;
-  text: string;
-  category: string | null;
-  group_name: string | null;
-}
-
-const sampleQuestions: Question[] = [
-  { id: 1, question_number: 1, text: 'How satisfied are you with our service?', category: 'General', group_name: 'All' },
-  { id: 2, question_number: 2, text: 'Would you recommend us?', category: 'General', group_name: 'All' },
-];
-
 export default function Home() {
-  const [questions] = useState<Question[]>(sampleQuestions);
-  const [userType, setUserType] = useState<'guest' | 'user' | 'admin'>('guest');
+  const [userType, setUserType] = useState<'guest' | 'user' | 'admin' | 'survey-login'>('guest');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [surveyUsername, setSurveyUsername] = useState('');
+  const [surveyPassword, setSurveyPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [surveyError, setSurveyError] = useState('');
+  const [dbTestResult, setDbTestResult] = useState('');
+  const [dbTestStatus, setDbTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
-  const handleUserLogin = () => {
-    setUserType('user');
+  const handleUserLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSurveyError('');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: surveyUsername, password: surveyPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        setUserType('user');
+      } else {
+        setSurveyError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      setSurveyError('Login failed. Please try again.');
+    }
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, accept any username/password combination
-    if (adminUsername && adminPassword) {
-      setUserType('admin');
-      setLoginError('');
-    } else {
-      setLoginError('Please enter both username and password');
+    setLoginError('');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        setUserType('admin');
+      } else {
+        setLoginError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      setLoginError('Login failed. Please try again.');
     }
   };
+
+  const testDatabaseConnection = async () => {
+    setDbTestStatus('testing');
+    setDbTestResult('Testing...');
+
+    try {
+      const response = await fetch('/api/test-db');
+      const data = await response.json();
+
+      if (data.success) {
+        setDbTestResult(`✅ Connected! ${data.user_count} users in database`);
+        setDbTestStatus('success');
+      } else {
+        setDbTestResult(`❌ ${data.message}`);
+        setDbTestStatus('error');
+      }
+    } catch (error) {
+      setDbTestResult('❌ API not available');
+      setDbTestStatus('error');
+    }
+  };
+
+  const startSurvey = () => {
+    // Show login form for survey access
+    setUserType('survey-login');
+  };
+
+  const showMainPage = () => {
+    setUserType('guest');
+  };
+
+  if (userType === 'survey-login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Login to Start Survey</h2>
+          <form onSubmit={handleUserLogin} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Username"
+                value={surveyUsername}
+                onChange={(e) => setSurveyUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                placeholder="Password"
+                value={surveyPassword}
+                onChange={(e) => setSurveyPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
+            >
+              Start Survey
+            </button>
+            {surveyError && <p className="text-red-500 text-center mt-4">{surveyError}</p>}
+            <div className="text-center mt-4">
+              <button
+                onClick={showMainPage}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                ← Back to Home
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (userType === 'guest') {
     return (
@@ -56,15 +159,15 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              SURVEYS BY DESIGN
+              SURVEYS BY DESIGN - LIVE UPDATE
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
               We create intelligent surveys that drive organizational improvement through data-driven insights and meaningful feedback.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <button
-                onClick={handleUserLogin}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                onClick={startSurvey}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Start Survey
               </button>
@@ -110,7 +213,23 @@ export default function Home() {
 
           {/* Admin Login Section */}
           <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8" id="admin-login">
-            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Administrator Access</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Administrator Access - TEST BUTTON BELOW</h2>
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <button
+                onClick={testDatabaseConnection}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
+              >
+                Test Database Connection (Updated)
+              </button>
+              {dbTestResult && (
+                <div className={`text-xs mt-2 text-center ${
+                  dbTestStatus === 'success' ? 'text-green-600' :
+                  dbTestStatus === 'error' ? 'text-red-600' : 'text-blue-600'
+                }`}>
+                  {dbTestResult}
+                </div>
+              )}
+            </div>
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
                 <input
@@ -178,19 +297,18 @@ export default function Home() {
 
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Survey Questions</h2>
-          {questions.length === 0 ? (
-            <p className="text-gray-600">No questions available.</p>
-          ) : (
-            <ul className="space-y-6">
-              {questions.map(q => (
-                <li key={q.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{q.question_number}. {q.text}</h3>
-                  {q.category && <p className="text-sm text-blue-600 font-medium">Category: {q.category}</p>}
-                  {q.group_name && <p className="text-sm text-gray-600">Group: {q.group_name}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="space-y-6">
+            <li className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">1. How satisfied are you with our service?</h3>
+              <p className="text-sm text-blue-600 font-medium">Category: General</p>
+              <p className="text-sm text-gray-600">Group: All</p>
+            </li>
+            <li className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">2. Would you recommend us?</h3>
+              <p className="text-sm text-blue-600 font-medium">Category: General</p>
+              <p className="text-sm text-gray-600">Group: All</p>
+            </li>
+          </ul>
         </div>
       </main>
     </div>
