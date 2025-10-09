@@ -1,34 +1,48 @@
-# Force Netlify Deployment - Edit Buttons Missing in Production
+# URGENT: Force Netlify Deployment - Changes Missing in Production
 
-This file is updated to trigger a fresh Netlify deployment.
+## CRITICAL ISSUE:
+🚨 **Latest changes NOT appearing on Netlify production site** 🚨
 
-## Issue:
-- Edit buttons visible on localhost:3001 ✅
-- Edit buttons NOT visible on production Netlify ❌
-- Code is correct and working locally
-- Deployment sync issue
+## Status:
+- ✅ Local development: All features working (localhost:3001)
+- ❌ Netlify production: Missing recent updates
+- ✅ GitHub: All commits pushed successfully
+- ❌ Deployment sync: BROKEN
 
-## Recent Updates Not Deployed:
-- Edit button functionality for survey questions in modals
-- Debug features with red borders and console logging
-- Improved modal layouts and responsiveness
-- Enhanced question editing capabilities
-- Fixed UI visibility issues
+## Missing Features in Production:
+1. **Edit buttons in survey question modals** (main issue)
+2. **Green "New Question" buttons** in survey modals
+3. **Enhanced question editing functionality**
+4. **Debug features with red borders and console logging**
+5. **Improved modal layouts and responsiveness**
 
-## Latest Commits:
-- 450dce5 - Remove unused admin_old.tsx file - cleanup stale source code
-- 06d63d4 - Debug edit button visibility issues in survey modals
-- 88ef019 - Add deployment trigger file to force Netlify rebuild
-- ed21864 - Force Netlify deployment by removing build ignore condition
+## Recent Commits NOT Deployed:
+- `9a7ecb5` - Change 'New Question' button color from indigo to green in survey modals
+- `e8f3a08` - Add 'New Question' buttons to survey creation/edit modals  
+- `450dce5` - Remove unused admin_old.tsx file - cleanup stale source code
+- `06d63d4` - Debug edit button visibility issues in survey modals
+- `2a759bc` - Fix edit button visibility in survey question modals
+- `67e77c6` - Add edit functionality to survey questions in survey creation/edit modals
+- `6524399` - Add edit button and functionality for survey questions on admin dashboard
 
-## Deployment Timestamp:
-Updated: 2025-10-08 20:16:54
+## Build Configuration:
+```toml
+[build]
+publish = ".next"
+command = "npm install && npm run build"
+ignore = ""  # Should allow all deployments
+```
 
-## Expected Results After Deployment:
-- Edit buttons with red borders visible in survey question modals
-- Console logging when buttons are clicked
-- Full edit functionality working in production
-- Question count display showing available questions
-- All debug features active for troubleshooting
+## Force Deploy Timestamp:
+**Updated: 2025-10-09 10:58:52 - FORCE REBUILD REQUIRED**
 
-This should trigger a complete rebuild and deployment of all recent changes.
+## Expected After Successful Deploy:
+- 🟢 Green "New Question" buttons in survey modals
+- 🔵 Blue "Edit" buttons with **red debug borders** next to each question
+- 📊 "Available questions: X" count display
+- 🖥️ Console logging when edit buttons clicked
+- 📱 Responsive modal layouts
+- ✨ Complete edit functionality working
+
+## ACTION REQUIRED:
+This deployment MUST succeed to bring production in sync with development.
