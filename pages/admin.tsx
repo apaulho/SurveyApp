@@ -325,10 +325,11 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Add the new question to the questions list
+        // Add the new question to both the questions list and availableQuestions list
         setQuestions([...questions, data.question]);
+        setAvailableQuestions([...availableQuestions, data.question]);
         closeCreateQuestionModal();
-        alert('Question created successfully!');
+        alert('Question created successfully! It\'s now available for selection in surveys.');
       } else {
         alert(data.error || 'Failed to create question');
       }
@@ -2189,7 +2190,18 @@ export default function AdminDashboard() {
               </div>
 
               <div className="mb-6">
-                <h4 className="text-md font-medium text-gray-900 mb-3">Select Questions for Survey</h4>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-md font-medium text-gray-900">Select Questions for Survey</h4>
+                  <button
+                    onClick={openCreateQuestionModal}
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <svg className="-ml-0.5 mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Question
+                  </button>
+                </div>
                 <div className="text-xs text-gray-500 mb-2">Available questions: {availableQuestions.length}</div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md min-w-0">
                   {availableQuestions.length > 0 ? (
@@ -2338,7 +2350,18 @@ export default function AdminDashboard() {
               </div>
 
               <div className="mb-6">
-                <h4 className="text-md font-medium text-gray-900 mb-3">Select Questions for Survey</h4>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-md font-medium text-gray-900">Select Questions for Survey</h4>
+                  <button
+                    onClick={openCreateQuestionModal}
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <svg className="-ml-0.5 mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Question
+                  </button>
+                </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md min-w-0">
                   {availableQuestions.length > 0 ? (
                     availableQuestions.map((question) => (
