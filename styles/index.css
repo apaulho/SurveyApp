@@ -1,0 +1,91 @@
+/* styles/index.css - Main stylesheet entry point */
+
+/* Import all CSS files in correct order */
+
+/* 1. Base styles and utilities */
+@import './globals.css';
+
+/* 2. Layout and structural styles */
+@import './layout.css';
+
+/* 3. Component-specific styles */
+@import './components.css';
+
+/* 4. Admin interface styles */
+@import './admin.css';
+
+/* 5. Custom utilities */
+@import './utilities.css';
+
+/* Additional styles can be added here */
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Selection styles */
+::selection {
+  background: rgba(0, 113, 227, 0.2);
+  color: #1d1d1f;
+}
+
+/* Focus visible for accessibility */
+.focus-visible:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .card-apple,
+  .modal-apple-content,
+  .admin-stat-card,
+  .admin-overview-card {
+    border: 2px solid;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
