@@ -916,6 +916,7 @@ export default function AdminDashboard() {
     );
   }
 
+  return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-xl border-r border-slate-200">
@@ -2558,4 +2559,3 @@ export default function AdminDashboard() {
       )}
     </div>
   );
-};
