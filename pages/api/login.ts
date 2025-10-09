@@ -1,5 +1,6 @@
 // pages/api/login.ts
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import pool from '../../lib/neon-db';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -57,6 +58,34 @@ export default async function handler(
     }
 
     console.log(`✅ User logged in: ${user.username} (Level: ${user.level})`);
+
+    // Create JWT token
+    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+    const token = jwt.sign(
+      {
+        user_id: user.user_id,
+        username: user.username,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        level: user.level
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Set JWT token in httpOnly cookie
+    res.setHeader('Set-Cookie', [
+      `auth-token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/`,
+      `user-session=${JSON.stringify({
+        user_id: user.user_id,
+        username: user.username,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        level: user.level
+      })}; Secure; SameSite=Strict; Max-Age=86400; Path=/`
+    ]);
 
     // Return user data (excluding password hash)
     const userData = {

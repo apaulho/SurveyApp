@@ -1,49 +1,17 @@
-headersOrigin = "inline"
-redirectsOrigin = "inline"
+[build]
+publish = ".next"
+command = "npm ci && npm run build"
 
-[functions]
-
-  [functions."*"]
-
-[[plugins]]
-origin = "ui"
-package = "@netlify/plugin-lighthouse"
-pinned_version = "6"
-
-  [plugins.inputs]
+[build.environment]
+NODE_VERSION = "20"
+NODE_ENV = "production"
 
 [[plugins]]
 origin = "config"
 package = "@netlify/plugin-nextjs"
 
-  [plugins.inputs]
-
-[build]
-publish = ".next"
-publishOrigin = "ui"
-commandOrigin = "config"
-command = "npm ci && npm run build"
-ignore = ""
-
-  [build.environment]
-  NODE_VERSION = "20"
-  NODE_ENV = "production"
-
-  [build.processing]
-
-    [build.processing.css]
-
-    [build.processing.html]
-
-    [build.processing.images]
-
-    [build.processing.js]
-
-  [build.services]
-
 [[headers]]
 for = "/*"
-
   [headers.values]
   X-Frame-Options = "DENY"
   X-XSS-Protection = "1; mode=block"
@@ -52,7 +20,6 @@ for = "/*"
 
 [[headers]]
 for = "/_next/static/*"
-
   [headers.values]
   Cache-Control = "public, max-age=31536000, immutable"
 
@@ -61,27 +28,29 @@ from = "/_next/image/"
 to = "/.netlify/images?url=:url&w=:width&q=:quality"
 status = 200
 force = false
-
   [redirects.query]
   url = ":url"
   w = ":width"
   q = ":quality"
-
-  [redirects.conditions]
-
-  [redirects.headers]
 
 [[redirects]]
 from = "/_ipx/*"
 to = "/.netlify/images?url=:url&w=:width&q=:quality"
 status = 200
 force = false
-
   [redirects.query]
   url = ":url"
   w = ":width"
   q = ":quality"
 
-  [redirects.conditions]
+# Handle API routes for Next.js on Netlify
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200
 
-  [redirects.headers]
+# Handle Next.js pages
+[[redirects]]
+from = "/_next/static/*"
+to = "/static/:splat"
+status = 200
