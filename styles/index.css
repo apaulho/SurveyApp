@@ -67,25 +67,3 @@
     display: none !important;
   }
 }
-
-/* High contrast mode adjustments */
-@media (prefers-contrast: high) {
-  .card-apple,
-  .modal-apple-content,
-  .admin-stat-card,
-  .admin-overview-card {
-    border: 2px solid;
-  }
-}
-
-/* Reduced motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
