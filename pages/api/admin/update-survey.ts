@@ -83,25 +83,15 @@ export default async function handler(
   }
 
   try {
-    console.log('Testing database connection...');
-    // Test database connection
-    await pool.query('SELECT 1');
-    console.log('Database connection successful');
-
     // Check if survey exists
     const existingSurvey = await pool.query(
       'SELECT survey_id FROM surveydb WHERE survey_id = $1',
       [survey_id]
     );
 
-    console.log('Survey existence check result:', existingSurvey.rows);
-
     if (existingSurvey.rows.length === 0) {
-      console.error('Survey not found with ID:', survey_id);
-      return res.status(404).json({ success: false, error: `Survey with ID ${survey_id} not found` });
+      return res.status(404).json({ success: false, error: 'Survey not found' });
     }
-
-    console.log('Survey exists, proceeding with update...');
 
     // Build dynamic update query
     const updateFields: string[] = [];
