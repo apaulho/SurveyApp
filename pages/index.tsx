@@ -197,8 +197,7 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-gray-900">SurveyPro</h1>
               <nav className="hidden md:flex space-x-8">
                 <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-                <a href="/about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
-                <a href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Login</a>
+                <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
                 <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
               </nav>
             </div>
@@ -228,6 +227,56 @@ export default function Home() {
                 Learn More
               </a>
             </div>
+          </div>
+
+          {/* Admin Login Section */}
+          <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8" id="admin-login">
+            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Administrator Access</h2>
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <button
+                onClick={testDatabaseConnection}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
+              >
+                Test Database Connection
+              </button>
+              {dbTestResult && (
+                <div className={`text-xs mt-2 text-center ${
+                  dbTestStatus === 'success' ? 'text-green-600' :
+                  dbTestStatus === 'error' ? 'text-red-600' : 'text-blue-600'
+                }`}>
+                  {dbTestResult}
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
+              >
+                Login as Administrator
+              </button>
+              {loginError && <p className="text-red-500 text-center mt-4">{loginError}</p>}
+            </form>
           </div>
         </main>
 
