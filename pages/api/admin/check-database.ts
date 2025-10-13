@@ -1,5 +1,5 @@
 // pages/api/admin/check-database.ts
-import pool from '../../../lib/neon-db';
+const pool = require('../../../lib/neon-db').default;
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface DatabaseCheckResponse {
