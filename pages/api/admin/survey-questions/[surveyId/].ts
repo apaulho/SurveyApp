@@ -1,5 +1,5 @@
 // pages/api/admin/survey-questions/[surveyId].ts
-import pool from '../../../lib/neon-db';
+const pool = require('../../../lib/neon-db').default;
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface SurveyQuestion {
@@ -82,7 +82,6 @@ export default async function handler(
 
   } catch (error) {
     console.error('Survey questions fetch error:', error);
-    // Provide more detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
       success: false,
