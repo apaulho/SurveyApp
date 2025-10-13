@@ -57,19 +57,6 @@ export default async function handler(
     question_ids
   }: UpdateSurveyRequest = req.body;
 
-  console.log('Update survey request:', {
-    survey_id,
-    survey_title,
-    survey_description,
-    company_id,
-    is_active,
-    is_public,
-    allow_anonymous,
-    start_date,
-    end_date,
-    question_ids
-  });
-
   if (!survey_id) {
     return res.status(400).json({ success: false, error: 'Survey ID is required' });
   }
@@ -161,8 +148,6 @@ export default async function handler(
 
     // If question_ids were provided, update the survey questions
     if (question_ids !== undefined) {
-      console.log('Updating questions for survey', survey_id, 'with question_ids:', question_ids);
-
       // First, remove existing questions
       await pool.query(
         'DELETE FROM surveyquestiondb WHERE survey_id = $1',
@@ -171,19 +156,14 @@ export default async function handler(
 
       // Then add the new questions
       if (question_ids.length > 0) {
-        try {
-          // Insert each question individually to avoid complex parameterized queries
-          for (let i = 0; i < question_ids.length; i++) {
-            await pool.query(
-              'INSERT INTO surveyquestiondb (survey_id, question_id, sort_order, is_required) VALUES ($1, $2, $3, false)',
-              [survey_id, question_ids[i], i]
-            );
-          }
-          console.log(`Successfully inserted ${question_ids.length} questions for survey ${survey_id}`);
-        } catch (insertError) {
-          console.error('Error inserting survey questions:', insertError);
-          throw insertError;
-        }
+        const surveyQuestionValues = question_ids.map((questionId, index) =>
+          `(${survey_id}, ${questionId}, ${index}, false)`
+        ).join(', ');
+
+        await pool.query(`
+          INSERT INTO surveyquestiondb (survey_id, question_id, sort_order, is_required)
+          VALUES ${surveyQuestionValues}
+        `);
       }
     }
 
