@@ -1,46 +1,19 @@
 import React, { useState } from 'react';
 
-interface Question {
-  id: number;
-  question_number: number;
-  text: string;
-  category: string | null;
-  group_name: string | null;
-}
-
-const sampleQuestions: Question[] = [
-  { id: 1, question_number: 1, text: 'How satisfied are you with our service?', category: 'General', group_name: 'All' },
-  { id: 2, question_number: 2, text: 'Would you recommend us?', category: 'General', group_name: 'All' },
-];
-
 export default function Home() {
   const [userType, setUserType] = useState<'guest' | 'user' | 'admin' | 'survey-login'>('guest');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [userUsername, setUserUsername] = useState('');
-  const [userPassword, setUserPassword] = useState('');
+  const [surveyUsername, setSurveyUsername] = useState('');
+  const [surveyPassword, setSurveyPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [userLoginError, setUserLoginError] = useState('');
+  const [surveyError, setSurveyError] = useState('');
   const [dbTestResult, setDbTestResult] = useState('');
   const [dbTestStatus, setDbTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
-  const startSurvey = () => {
-    setUserType('survey-login');
-  };
-
-  const showMainPage = () => {
-    setUserType('guest');
-  };
-
   const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUserLoginError('');
-
-    // Client-side validation
-    if (!userUsername.trim() || !userPassword.trim()) {
-      setUserLoginError('Please enter both username and password');
-      return;
-    }
+    setSurveyError('');
 
     try {
       const response = await fetch('/api/login', {
@@ -48,25 +21,18 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: userUsername.trim(),
-          password: userPassword.trim()
-        })
+        body: JSON.stringify({ username: surveyUsername, password: surveyPassword })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success && data.user) {
         setUserType('user');
-        setUserLoginError('');
-        setUserUsername('');
-        setUserPassword('');
       } else {
-        setUserLoginError(data.error || 'Login failed');
+        setSurveyError(data.error || 'Login failed');
       }
     } catch (error) {
-      console.error('User login error:', error);
-      setUserLoginError('Network error. Please try again.');
+      setSurveyError('Login failed. Please try again.');
     }
   };
 
@@ -74,37 +40,24 @@ export default function Home() {
     e.preventDefault();
     setLoginError('');
 
-    // Client-side validation
-    if (!adminUsername.trim() || !adminPassword.trim()) {
-      setLoginError('Please enter both username and password');
-      return;
-    }
-
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: adminUsername.trim(),
-          password: adminPassword.trim()
-        })
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success && data.user) {
         setUserType('admin');
-        setLoginError('');
-        setAdminUsername('');
-        setAdminPassword('');
       } else {
         setLoginError(data.error || 'Login failed');
       }
     } catch (error) {
-      console.error('Admin login error:', error);
-      setLoginError('Network error. Please try again.');
+      setLoginError('Login failed. Please try again.');
     }
   };
 
@@ -124,64 +77,62 @@ export default function Home() {
         setDbTestStatus('error');
       }
     } catch (error) {
-      console.error('Database test error:', error);
       setDbTestResult('❌ API not available');
       setDbTestStatus('error');
     }
   };
 
+  const startSurvey = () => {
+    // Show login form for survey access
+    setUserType('survey-login');
+  };
+
+  const showMainPage = () => {
+    setUserType('guest');
+  };
+
   if (userType === 'survey-login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Your Survey</h2>
-              <p className="text-gray-600">Enter your credentials to begin</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Login to Start Survey</h2>
+          <form onSubmit={handleUserLogin} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Username"
+                value={surveyUsername}
+                onChange={(e) => setSurveyUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                required
+              />
             </div>
-            <form onSubmit={handleUserLogin} className="space-y-6">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={userUsername}
-                  onChange={(e) => setUserUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={userPassword}
-                  onChange={(e) => setUserPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
+            <div>
+              <input
+                type="password"
+                placeholder="Password"
+                value={surveyPassword}
+                onChange={(e) => setSurveyPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
+            >
+              Start Survey
+            </button>
+            {surveyError && <p className="text-red-500 text-center mt-4">{surveyError}</p>}
+            <div className="text-center mt-4">
               <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
+                onClick={showMainPage}
+                className="text-blue-600 hover:text-blue-800 text-sm"
               >
-                Start Survey
+                ← Back to Home
               </button>
-              {userLoginError && <p className="text-red-500 text-center mt-4">{userLoginError}</p>}
-              <div className="text-center mt-4">
-                <button
-                  onClick={showMainPage}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  ← Back to Home
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
     );
@@ -191,14 +142,13 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         {/* Header */}
-        <header className="bg-gray-100 shadow-sm border-b border-gray-200">
+        <header className="bg-white shadow-sm border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">SurveyPro</h1>
               <nav className="hidden md:flex space-x-8">
                 <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-                <a href="/about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
-                <a href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Login</a>
+                <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
                 <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
               </nav>
             </div>
@@ -209,7 +159,7 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              SURVEYS BY DESIGN
+              SURVEYS BY DESIGN - LIVE UPDATE
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
               We create intelligent surveys that drive organizational improvement through data-driven insights and meaningful feedback.
@@ -217,7 +167,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <button
                 onClick={startSurvey}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Start Survey
               </button>
@@ -229,6 +179,87 @@ export default function Home() {
               </a>
             </div>
           </div>
+
+          {/* Value Proposition */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Data-Driven Insights</h3>
+              <p className="text-gray-600">Transform feedback into actionable insights that drive real organizational change.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-Time Analytics</h3>
+              <p className="text-gray-600">Monitor survey responses in real-time with comprehensive analytics and reporting tools.</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Employee Engagement</h3>
+              <p className="text-gray-600">Foster a culture of continuous feedback and improvement across your organization.</p>
+            </div>
+          </div>
+
+          {/* Admin Login Section */}
+          <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8" id="admin-login">
+            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Administrator Access - TEST BUTTON BELOW</h2>
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <button
+                onClick={testDatabaseConnection}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm"
+              >
+                Test Database Connection (Updated)
+              </button>
+              {dbTestResult && (
+                <div className={`text-xs mt-2 text-center ${
+                  dbTestStatus === 'success' ? 'text-green-600' :
+                  dbTestStatus === 'error' ? 'text-red-600' : 'text-blue-600'
+                }`}>
+                  {dbTestResult}
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
+              >
+                Login as Administrator
+              </button>
+              {loginError && <p className="text-red-500 text-center mt-4">{loginError}</p>}
+            </form>
+          </div>
         </main>
 
         {/* Footer */}
@@ -237,23 +268,13 @@ export default function Home() {
             <p className="text-gray-400">&copy; 2024 SurveyPro. Transforming feedback into action.</p>
           </div>
         </footer>
-
-        <style jsx>{`
-          .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          }
-        `}</style>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-gray-100 shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">SurveyPro</h1>
@@ -276,19 +297,18 @@ export default function Home() {
 
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Survey Questions</h2>
-          {sampleQuestions.length === 0 ? (
-            <p className="text-gray-600">No questions available.</p>
-          ) : (
-            <ul className="space-y-6">
-              {sampleQuestions.map(q => (
-                <li key={q.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{q.question_number}. {q.text}</h3>
-                  {q.category && <p className="text-sm text-blue-600 font-medium">Category: {q.category}</p>}
-                  {q.group_name && <p className="text-sm text-gray-600">Group: {q.group_name}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="space-y-6">
+            <li className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">1. How satisfied are you with our service?</h3>
+              <p className="text-sm text-blue-600 font-medium">Category: General</p>
+              <p className="text-sm text-gray-600">Group: All</p>
+            </li>
+            <li className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">2. Would you recommend us?</h3>
+              <p className="text-sm text-blue-600 font-medium">Category: General</p>
+              <p className="text-sm text-gray-600">Group: All</p>
+            </li>
+          </ul>
         </div>
       </main>
     </div>
