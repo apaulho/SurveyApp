@@ -1,5 +1,5 @@
 // pages/api/admin/update-survey.ts
-const pool = require('../../../lib/neon-db').default;
+import pool from '../../../lib/neon-db';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface Survey {

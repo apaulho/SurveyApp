@@ -677,50 +677,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const openEditSurveyModal = async (surveyToEdit: Survey) => {
+  const openEditSurveyModal = (surveyToEdit: Survey) => {
     setEditingSurvey(surveyToEdit);
-
-    try {
-      // Fetch existing questions for this survey
-      const response = await fetch(`/api/admin/get-survey-questions?surveyId=${surveyToEdit.survey_id}`);
-      let existingQuestionIds: number[] = [];
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.questions && data.questions.length > 0) {
-          existingQuestionIds = data.questions.map((q: any) => q.question_id);
-        }
-      } else {
-        console.error('Failed to fetch existing survey questions');
-      }
-
-      setEditSurveyData({
-        survey_title: surveyToEdit.survey_title,
-        survey_description: surveyToEdit.survey_description || '',
-        company_id: surveyToEdit.company_id?.toString() || '',
-        is_active: surveyToEdit.is_active,
-        is_public: surveyToEdit.is_public,
-        allow_anonymous: surveyToEdit.allow_anonymous,
-        start_date: surveyToEdit.start_date || '',
-        end_date: surveyToEdit.end_date || '',
-        selectedQuestionIds: existingQuestionIds,
-      });
-    } catch (error) {
-      console.error('Error fetching existing survey questions:', error);
-      // Set default values if fetching fails
-      setEditSurveyData({
-        survey_title: surveyToEdit.survey_title,
-        survey_description: surveyToEdit.survey_description || '',
-        company_id: surveyToEdit.company_id?.toString() || '',
-        is_active: surveyToEdit.is_active,
-        is_public: surveyToEdit.is_public,
-        allow_anonymous: surveyToEdit.allow_anonymous,
-        start_date: surveyToEdit.start_date || '',
-        end_date: surveyToEdit.end_date || '',
-        selectedQuestionIds: [],
-      });
-    }
-
+    setEditSurveyData({
+      survey_title: surveyToEdit.survey_title,
+      survey_description: surveyToEdit.survey_description || '',
+      company_id: surveyToEdit.company_id?.toString() || '',
+      is_active: surveyToEdit.is_active,
+      is_public: surveyToEdit.is_public,
+      allow_anonymous: surveyToEdit.allow_anonymous,
+      start_date: surveyToEdit.start_date || '',
+      end_date: surveyToEdit.end_date || '',
+      selectedQuestionIds: [], // TODO: Load existing questions
+    });
     setShowEditSurveyModal(true);
   };
 
