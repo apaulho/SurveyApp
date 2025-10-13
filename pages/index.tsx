@@ -14,48 +14,15 @@ const sampleQuestions: Question[] = [
 ];
 
 export default function Home() {
-  const [userType, setUserType] = useState<'guest' | 'user' | 'admin' | 'survey-login'>('guest');
+  const [userType, setUserType] = useState<'guest' | 'user' | 'admin'>('guest');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [userUsername, setUserUsername] = useState('');
-  const [userPassword, setUserPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [userLoginError, setUserLoginError] = useState('');
   const [dbTestResult, setDbTestResult] = useState('');
   const [dbTestStatus, setDbTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
-  const startSurvey = () => {
-    setUserType('survey-login');
-  };
-
-  const showMainPage = () => {
-    setUserType('guest');
-  };
-
-  const handleUserLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUserLoginError('');
-
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username: userUsername, password: userPassword })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success && data.user) {
-        setUserType('user');
-        setUserLoginError('');
-      } else {
-        setUserLoginError(data.error || 'Login failed');
-      }
-    } catch (error) {
-      setUserLoginError('Login failed. Please try again.');
-    }
+  const handleUserLogin = () => {
+    setUserType('user');
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -75,7 +42,6 @@ export default function Home() {
 
       if (response.ok && data.success && data.user) {
         setUserType('admin');
-        setLoginError('');
       } else {
         setLoginError(data.error || 'Login failed');
       }
@@ -105,63 +71,6 @@ export default function Home() {
     }
   };
 
-  if (userType === 'survey-login') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Your Survey</h2>
-              <p className="text-gray-600">Enter your credentials to begin</p>
-            </div>
-            <form onSubmit={handleUserLogin} className="space-y-6">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={userUsername}
-                  onChange={(e) => setUserUsername(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={userPassword}
-                  onChange={(e) => setUserPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300"
-              >
-                Start Survey
-              </button>
-              {userLoginError && <p className="text-red-500 text-center mt-4">{userLoginError}</p>}
-              <div className="text-center mt-4">
-                <button
-                  onClick={showMainPage}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  ← Back to Home
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (userType === 'guest') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -190,7 +99,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <button
-                onClick={startSurvey}
+                onClick={handleUserLogin}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Start Survey
