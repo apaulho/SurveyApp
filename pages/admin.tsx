@@ -618,7 +618,7 @@ export default function AdminDashboard() {
   };
 
   // Survey Management Functions
-  const openCreateSurveyModal = async () => {
+  const openCreateSurveyModal = () => {
     setCreateSurveyData({
       survey_title: '',
       survey_description: '',
@@ -630,9 +630,6 @@ export default function AdminDashboard() {
       end_date: '',
       selectedQuestionIds: [],
     });
-    
-    // Refresh available questions when opening modal
-    await fetchAvailableQuestions();
     setShowCreateSurveyModal(true);
   };
 
@@ -690,44 +687,45 @@ export default function AdminDashboard() {
   const openEditSurveyModal = async (surveyToEdit: Survey) => {
     setEditingSurvey(surveyToEdit);
 
-    // Refresh available questions when opening modal
-    await fetchAvailableQuestions();
-
     try {
-      // Fetch existing survey questions
+      // Fetch existing questions for this survey
       const response = await fetch(`/api/admin/get-survey-questions?surveyId=${surveyToEdit.survey_id}`);
-      
+      let existingQuestionIds: number[] = [];
+
       if (response.ok) {
         const data = await response.json();
-        const existingQuestionIds = data.questions.map((q: any) => q.question_id);
-        
-        setEditSurveyData({
-          survey_title: surveyToEdit.survey_title,
-          survey_description: surveyToEdit.survey_description || '',
-          company_id: surveyToEdit.company_id?.toString() || '',
-          is_active: surveyToEdit.is_active,
-          is_public: surveyToEdit.is_public,
-          allow_anonymous: surveyToEdit.allow_anonymous,
-          start_date: surveyToEdit.start_date ? new Date(surveyToEdit.start_date).toISOString().split('T')[0] : '',
-          end_date: surveyToEdit.end_date ? new Date(surveyToEdit.end_date).toISOString().split('T')[0] : '',
-          selectedQuestionIds: existingQuestionIds,
-        });
+        if (data.questions && data.questions.length > 0) {
+          existingQuestionIds = data.questions.map((q: any) => q.question_id);
+        }
       } else {
-        console.error('Failed to fetch survey questions');
-        setEditSurveyData({
-          survey_title: surveyToEdit.survey_title,
-          survey_description: surveyToEdit.survey_description || '',
-          company_id: surveyToEdit.company_id?.toString() || '',
-          is_active: surveyToEdit.is_active,
-          is_public: surveyToEdit.is_public,
-          allow_anonymous: surveyToEdit.allow_anonymous,
-          start_date: surveyToEdit.start_date ? new Date(surveyToEdit.start_date).toISOString().split('T')[0] : '',
-          end_date: surveyToEdit.end_date ? new Date(surveyToEdit.end_date).toISOString().split('T')[0] : '',
-          selectedQuestionIds: [],
-        });
+        console.error('Failed to fetch existing survey questions');
       }
+
+      setEditSurveyData({
+        survey_title: surveyToEdit.survey_title,
+        survey_description: surveyToEdit.survey_description || '',
+        company_id: surveyToEdit.company_id?.toString() || '',
+        is_active: surveyToEdit.is_active,
+        is_public: surveyToEdit.is_public,
+        allow_anonymous: surveyToEdit.allow_anonymous,
+        start_date: surveyToEdit.start_date || '',
+        end_date: surveyToEdit.end_date || '',
+        selectedQuestionIds: existingQuestionIds,
+      });
     } catch (error) {
-      console.error('Error fetching survey questions:', error);
+      console.error('Error fetching existing survey questions:', error);
+      // Set default values if fetching fails
+      setEditSurveyData({
+        survey_title: surveyToEdit.survey_title,
+        survey_description: surveyToEdit.survey_description || '',
+        company_id: surveyToEdit.company_id?.toString() || '',
+        is_active: surveyToEdit.is_active,
+        is_public: surveyToEdit.is_public,
+        allow_anonymous: surveyToEdit.allow_anonymous,
+        start_date: surveyToEdit.start_date || '',
+        end_date: surveyToEdit.end_date || '',
+        selectedQuestionIds: [],
+      });
     }
 
     setShowEditSurveyModal(true);
@@ -2190,7 +2188,6 @@ export default function AdminDashboard() {
 
               <div className="mb-6">
                 <h4 className="text-md font-medium text-gray-900 mb-3">Select Questions for Survey</h4>
-                <div className="text-xs text-gray-500 mb-2">Available questions: {availableQuestions.length}</div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md min-w-0">
                   {availableQuestions.length > 0 ? (
                     availableQuestions.map((question) => (
@@ -2209,12 +2206,8 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <button
-                          onClick={() => {
-                            console.log('Edit button clicked for question:', question.question_id);
-                            openEditQuestionModal(question);
-                          }}
-                          className="ml-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium flex-shrink-0 whitespace-nowrap border-2 border-red-500"
-                          style={{ minWidth: '50px', backgroundColor: '#2563eb' }}
+                          onClick={() => openEditQuestionModal(question)}
+                          className="ml-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium flex-shrink-0 whitespace-nowrap"
                         >
                           Edit
                         </button>
