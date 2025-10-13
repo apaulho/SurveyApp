@@ -84,24 +84,9 @@ export default async function handler(
 
   try {
     console.log('Testing database connection...');
-    
-    // Test database connection first
-    if (!pool) {
-      console.error('Database pool is undefined');
-      return res.status(500).json({ success: false, error: 'Database connection not available' });
-    }
-
-    // Test with a simple query
-    try {
-      const testQuery = await pool.query('SELECT 1 as test');
-      console.log('Database connection test successful:', testQuery.rows);
-    } catch (dbError) {
-      console.error('Database connection test failed:', dbError);
-      return res.status(500).json({ 
-        success: false, 
-        error: `Database connection failed: ${dbError instanceof Error ? dbError.message : 'Unknown error'}` 
-      });
-    }
+    // Test database connection
+    await pool.query('SELECT 1');
+    console.log('Database connection successful');
 
     // Check if survey exists
     const existingSurvey = await pool.query(
@@ -281,20 +266,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Update survey error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('Error name:', error instanceof Error ? error.name : 'Unknown error type');
-    console.error('Error message:', error instanceof Error ? error.message : String(error));
-    
-    let errorMessage = 'Failed to update survey';
-    if (error instanceof Error) {
-      errorMessage += `: ${error.message}`;
-    } else {
-      errorMessage += `: ${String(error)}`;
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: errorMessage 
-    });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: `Internal server error: ${errorMessage}` });
   }
 }
